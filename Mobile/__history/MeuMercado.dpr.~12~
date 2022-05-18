@@ -1,0 +1,23 @@
+program MeuMercado;
+
+uses
+  System.StartUpCopy,
+  FMX.Forms,
+  UnitLogin in 'UnitLogin.pas' {FrmLogin},
+  UnitPrincipal in 'UnitPrincipal.pas' {FrmPrincipal},
+  UnitMercado in 'UnitMercado.pas' {FrmMercado},
+  Frame.Produto.Card in 'Frames\Frame.Produto.Card.pas' {FrameProdutoCard: TFrame},
+  UnitSplash in 'UnitSplash.pas' {FrmSplash},
+  UnitProduto in 'UnitProduto.pas' {Form1};
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.CreateForm(TFrmPrincipal, FrmPrincipal);
+  Application.CreateForm(TFrmLogin, FrmLogin);
+  Application.CreateForm(TFrmMercado, FrmMercado);
+  Application.CreateForm(TFrmSplash, FrmSplash);
+  Application.CreateForm(TForm1, Form1);
+  Application.Run;
+end.

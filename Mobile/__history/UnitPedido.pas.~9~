@@ -1,0 +1,70 @@
+unit UnitPedido;
+
+interface
+
+uses
+  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
+  FMX.ListView.Types, FMX.ListView.Appearances, FMX.ListView.Adapters.Base,
+  FMX.ListView, FMX.Objects, FMX.Controls.Presentation, FMX.StdCtrls,
+  FMX.Layouts;
+
+type
+  TFrmPedido = class(TForm)
+    lytToolbar: TLayout;
+    lblTitulo: TLabel;
+    imgVoltar: TImage;
+    lvPedidos: TListView;
+    imgPedidoMin: TImage;
+    imgShop: TImage;
+  private
+    procedure AddPedidoLv(id_pedido, qtd_itens: Integer; nome, endereco,
+      dt_pedido: string; vl_pedido: double);
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  FrmPedido: TFrmPedido;
+
+implementation
+
+uses
+   UnitPrincipal;
+
+{$R *.fmx}
+
+procedure TFrmPedido.AddPedidoLv(id_pedido, qtd_itens: Integer;
+                                 nome, endereco, dt_pedido: string;
+                                 vl_pedido: double);
+var
+   img: TListItemImage;
+   txt: TListItemText;
+begin
+   with lvPedidos.Items.Add do
+   begin
+      Height := 115;
+      Tag := id_pedido;
+
+      img := TListItemImage(Objects.FindDrawable('imgShop'));
+      img.Bitmap := imgShop.Bitmap;
+
+      txt := TListItemText(Objects.FindDrawable('txtNome'));
+      txt.Text := nome;
+
+      txt := TListItemText(Objects.FindDrawable('txtPedido'));
+      txt.Text := 'Pedido ' + id_pedido.toString;
+
+      txt := TListItemText(Objects.FindDrawable('txtEndereco'));
+      txt.Text := endereco;
+
+      txt := TListItemText(Objects.FindDrawable('txtValor'));
+      txt.Text := FormatFloat('R$ #,##0.00', vl_pedido) + ' - ' + qtd_itens;
+
+      txt := TListItemText(Objects.FindDrawable('txtCompraMin'));
+      txt.Text := 'Compra mínima: ' + FormatFloat('R$ #,##0.00', vl_min_ped);
+   end;
+end;
+
+end.

@@ -1,0 +1,46 @@
+unit UnitProduto;
+
+interface
+
+uses
+  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.Objects,
+  FMX.Controls.Presentation, FMX.StdCtrls, FMX.Layouts;
+
+type
+  TFrmProduto = class(TForm)
+    lytToolbar: TLayout;
+    lblTitulo: TLabel;
+    imgVoltar: TImage;
+    lytFoto: TLayout;
+    imgFoto: TImage;
+    lblNome: TLabel;
+    Layout1: TLayout;
+    Layout2: TLayout;
+    lblUnidade: TLabel;
+    lblValor: TLabel;
+    Label1: TLabel;
+    rectRodape: TRectangle;
+    Layout3: TLayout;
+    imgMenos: TImage;
+    imgMais: TImage;
+    lblQuantidade: TLabel;
+    btnAdiciona: TButton;
+    lytFundo: TLayout;
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  FrmProduto: TFrmProduto;
+
+implementation
+
+uses
+   UnitPrincipal;
+
+{$R *.fmx}
+
+end.
