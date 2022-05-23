@@ -1,7 +1,7 @@
-import { Route } from "express";
+import { Router } from "express";
 import db from '../config/database.js';
 
-const controllerMercados = Route();
+const controllerMercados = Router();
 
 controllerMercados.get("/mercados", function(request, response){
 

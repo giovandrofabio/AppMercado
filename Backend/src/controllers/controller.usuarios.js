@@ -1,7 +1,7 @@
-import { Route } from "express";
+import { Router } from "express";
 import db from '../config/database.js';
 
-const controllerUsuarios = Route();
+const controllerUsuarios = Router();
 
 controllerUsuarios.post("/usuarios/login", function(request, response){
     
