@@ -124,10 +124,10 @@ values(2, 'Cerveja Heineken Lata', 'O processo de fermentação da Heineken, a e
 
 
 insert into pedido(id_mercado, id_usuario, dt_pedido, vl_subtotal, vl_entrega, vl_total, endereco, bairro, cidade, uf, cep)
-values(1, 1, current_timestamp(), 77.10, 8.50, 85.60, 'Av Paulista, 1500', 'Bela Vista', 'São Paulo', 'SP', '03015-500');
+values(1, 2, current_timestamp(), 77.10, 8.50, 85.60, 'Av Paulista, 1500', 'Bela Vista', 'São Paulo', 'SP', '03015-500');
 
-insert into pedido_item(id_pedido, id_produto, qtd, vl_unitario, vl_total) values(1, 1, 2, 9.75, 19.50);
-insert into pedido_item(id_pedido, id_produto, qtd, vl_unitario, vl_total) values(1, 3, 12, 4.80, 57.60);
+insert into pedido_item(id_pedido, id_produto, qtd, vl_unitario, vl_total) values(3, 1, 2, 9.75, 19.50);
+insert into pedido_item(id_pedido, id_produto, qtd, vl_unitario, vl_total) values(3, 3, 12, 4.80, 57.60);
 
 /*-------------------------------------------------------------*/
 

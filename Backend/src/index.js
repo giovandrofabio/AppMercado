@@ -1,8 +1,9 @@
 import express from "express";
 import cors from "cors";
-import db from "./config/database.js";
 import controllerMercados from "./controllers/controller.mercados.js";
 import controllerUsuarios from "./controllers/controller.usuarios.js";
+import controllerProdutos from "./controllers/controller.produtos.js";
+import controllerPedidos from "./controllers/controller.pedidos.js";
 
 const app = express();
 
@@ -15,7 +16,8 @@ app.use(cors());
 //Controllers
 app.use(controllerUsuarios);
 app.use(controllerMercados);
-
+app.use(controllerProdutos);
+app.use(controllerPedidos);
 /*
     Verbos HTTP:
     -------------------------
