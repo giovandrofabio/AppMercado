@@ -20,7 +20,7 @@ controllerUsuarios.post("/usuarios/login", function(request, response){
 
 controllerUsuarios.post("/usuarios/cadastro", function(request, response){
     let body = request.body 
-    let ssql = "INSERT INTO usuarios (nome, email, senha, endereco, bairro, cidade, uf, cep, dt_cadastro) "
+    let ssql = "INSERT INTO usuario (nome, email, senha, endereco, bairro, cidade, uf, cep, dt_cadastro) "
     ssql += " VALUES(?,?,?,?,?,?,?,?,current_timestamp()) "
  
     db.query(ssql, [body.nome,

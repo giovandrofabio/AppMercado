@@ -34,41 +34,46 @@ type
     Label1: TLabel;
     edtEmail: TEdit;
     btnLogin: TButton;
-    Label2: TLabel;
+    lblCadConta: TLabel;
     Image2: TImage;
     Layout2: TLayout;
     Label3: TLabel;
-    Button2: TButton;
-    Label4: TLabel;
+    btnProximo: TButton;
+    lblLogin: TLabel;
     Label5: TLabel;
     Image3: TImage;
     Layout3: TLayout;
     Label6: TLabel;
     btnCriarConta: TButton;
     Label7: TLabel;
-    Label8: TLabel;
+    lblLogin2: TLabel;
     Layout4: TLayout;
     StyleBook: TStyleBook;
     Rectangle1: TRectangle;
     Rectangle2: TRectangle;
     edtSenha: TEdit;
     Rectangle3: TRectangle;
-    Edit2: TEdit;
+    edtNomeCad: TEdit;
     Rectangle4: TRectangle;
-    Edit3: TEdit;
+    edtSenhaCad: TEdit;
     Rectangle5: TRectangle;
-    Edit4: TEdit;
+    edtEmailCad: TEdit;
     Rectangle6: TRectangle;
-    Edit5: TEdit;
+    edtEnderecoCad: TEdit;
     Rectangle7: TRectangle;
-    Edit6: TEdit;
+    edtBairroCad: TEdit;
     Rectangle9: TRectangle;
-    Edit8: TEdit;
+    edtUfCad: TEdit;
     Rectangle8: TRectangle;
-    Edit7: TEdit;
+    edtCidadeCad: TEdit;
     Rectangle10: TRectangle;
-    Edit9: TEdit;
+    edtCepCad: TEdit;
+    btnVoltar: TImage;
     procedure btnLoginClick(Sender: TObject);
+    procedure lblCadContaClick(Sender: TObject);
+    procedure lblLoginClick(Sender: TObject);
+    procedure btnProximoClick(Sender: TObject);
+    procedure btnCriarContaClick(Sender: TObject);
   private
     procedure ThreadLoginTerminate(Sender: TObject);
     { Private declarations }
@@ -85,6 +90,21 @@ uses
   DataModule.Usuario, UnitPrincipal;
 
 {$R *.fmx}
+
+procedure TFrmLogin.btnProximoClick(Sender: TObject);
+begin
+   TabControl.GotoVisibleTab(2);
+end;
+
+procedure TFrmLogin.lblCadContaClick(Sender: TObject);
+begin
+   TabControl.GotoVisibleTab(1);
+end;
+
+procedure TFrmLogin.lblLoginClick(Sender: TObject);
+begin
+   TabControl.GotoVisibleTab(0);
+end;
 
 procedure TFrmLogin.ThreadLoginTerminate(Sender: TObject);
 begin
@@ -103,7 +123,33 @@ begin
    if not Assigned(FrmPrincipal) then
       Application.CreateForm(TFrmPrincipal, FrmPrincipal);
 
+   Application.MainForm := FrmPrincipal;
    FrmPrincipal.Show;
+   FrmLogin.Close;
+end;
+
+procedure TFrmLogin.btnCriarContaClick(Sender: TObject);
+var
+   T : TThread;
+begin
+   TLoading.Show(FrmLogin, '');
+
+   T := TThread.CreateAnonymousThread(procedure
+   begin
+      DmUsuario.CriarConta(edtNomeCad.Text, edtEmailCad.Text, edtSenhaCad.Text,
+                           edtEnderecoCad.Text, edtBairroCad.Text, edtCidadeCad.Text,
+                           edtUfCad.Text, edtCepCad.Text);
+
+      // Salvar dados no banco do aparelho..
+      if DmUsuario.TabUsuario.RecordCount > 0 then
+      begin
+
+      end;
+
+   end);
+
+   T.OnTerminate := ThreadLoginTerminate;
+   T.Start;
 end;
 
 procedure TFrmLogin.btnLoginClick(Sender: TObject);

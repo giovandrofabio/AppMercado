@@ -71,7 +71,7 @@ begin
 
       if (resp.StatusCode = 401) then
          raise Exception.Create('Usuário não autorizado')
-      else if (resp.StatusCode <> 201) then
+      else if (resp.StatusCode <> 200) then
          raise Exception.Create(resp.Content);
    finally
       json.DisposeOf;
@@ -105,7 +105,7 @@ begin
 
       if (resp.StatusCode = 401) then
          raise Exception.Create('E-meail ou Senha inválida')
-      else if (resp.StatusCode <> 200) then
+      else if (resp.StatusCode <> 201) then
          raise Exception.Create(resp.Content);
    finally
       json.DisposeOf;
