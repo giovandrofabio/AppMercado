@@ -15,7 +15,8 @@ uses
   UnitPedidoDetalhe in 'UnitPedidoDetalhe.pas' {FrmPedidoDetalhe},
   DataModule.Usuario in 'DataModule\DataModule.Usuario.pas' {DmUsuario: TDataModule},
   uLoading in 'Units\uLoading.pas',
-  DataModule.Mercado in 'DataModule\DataModule.Mercado.pas' {DmMercado: TDataModule};
+  DataModule.Mercado in 'DataModule\DataModule.Mercado.pas' {DmMercado: TDataModule},
+  uConsts in 'Units\uConsts.pas';
 
 {$R *.res}
 

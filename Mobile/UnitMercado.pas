@@ -3,9 +3,25 @@ unit UnitMercado;
 interface
 
 uses
-  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
-  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.StdCtrls,
-  FMX.Edit, FMX.Objects, FMX.Controls.Presentation, FMX.Layouts, FMX.ListBox;
+  System.SysUtils,
+  System.Types,
+  System.UITypes,
+  System.Classes,
+  System.Variants,
+
+  FMX.Types,
+  FMX.Controls,
+  FMX.Forms,
+  FMX.Graphics,
+  FMX.Dialogs,
+  FMX.StdCtrls,
+  FMX.Edit,
+  FMX.Objects,
+  FMX.Controls.Presentation,
+  FMX.Layouts,
+  FMX.ListBox,
+
+  uLoading;
 
 type
   TFrmMercado = class(TForm)
@@ -38,15 +54,20 @@ type
     procedure lbProdutosItemClick(const Sender: TCustomListBox;
       const Item: TListBoxItem);
   private
+    FId_Mercado: Integer;
     procedure AddProduto(id_produto: Integer; descricao, unidade: string;
       valor: Double);
-    procedure ListarProdutos;
+    procedure ListarProdutos(id_categoria: integer);
     procedure ListarCategorias;
     procedure AddCategorias(id_categoria: Integer; descricao: string);
     procedure SelecionarCategoria(item: TListBoxItem);
+    procedure CarregarDados;
+    procedure ThreadDadosTerminate(Sender: TObject);
+    procedure ThreadProdutosTerminate(Sender: TObject);
     { Private declarations }
   public
     { Public declarations }
+    property id_mercado: Integer read FId_Mercado write  FId_Mercado;
   end;
 
 var
@@ -55,7 +76,7 @@ var
 implementation
 
 uses
-   UnitPrincipal, Frame.Produto.Card, UnitProduto;
+   UnitPrincipal, Frame.Produto.Card, UnitProduto, DataModule.Mercado;
 
 {$R *.fmx}
 
@@ -158,26 +179,108 @@ end;
 
 procedure TFrmMercado.ListarCategorias;
 begin
-   lbCategoria.Items.Clear;
+   DmMercado.ListarCategoria(id_mercado);
 
-   AddCategorias(0, 'Alimentos');
-   AddCategorias(1, 'Bebidas');
-   AddCategorias(2, 'Limpeza');
-   AddCategorias(3, 'Eletrônicos');
-   AddCategorias(4, 'Informática');
+   with DmMercado.TabCategoria do
+   begin
+      while Not Eof do
+      begin
+         TThread.Synchronize(TThread.CurrentThread, procedure
+         begin
+            AddCategorias(FieldByName('id_categoria').AsInteger,
+                          FieldByName('descricao').AsString);
+         end);
 
-   ListarProdutos;
+         Next;
+      end;
+   end;
+
+
+   if lbCategoria.Items.Count > 0 then
+      TThread.Synchronize(TThread.CurrentThread, procedure
+      begin
+         SelecionarCategoria(lbCategoria.ItemByIndex(0));
+      end);
+
 end;
+
+procedure TFrmMercado.ThreadDadosTerminate(Sender: TObject);
+begin
+   lblTitulo.Opacity   := 1;
+   lytEndereco.Opacity := 1;
+   TLoading.Hide;
+
+   if Sender is TThread then
+   begin
+      if Assigned(TThread(Sender).FatalException) then
+      begin
+         ShowMessage(Exception(TThread(Sender).FatalException).Message);
+         Exit;
+      end;
+   end;
+
+   ListarProdutos(lbCategoria.Tag);
+end;
+
+procedure TFrmMercado.ThreadProdutosTerminate(Sender: TObject);
+begin
+   TLoading.Hide;
+
+   if Sender is TThread then
+   begin
+      if Assigned(TThread(Sender).FatalException) then
+      begin
+         ShowMessage(Exception(TThread(Sender).FatalException).Message);
+         Exit;
+      end;
+   end;
+end;
+
+procedure TFrmMercado.CarregarDados;
+var
+   T : TThread;
+begin
+   TLoading.Show(FrmMercado, '');
+   lbCategoria.Items.Clear;
+   lbProdutos.Items.Clear;
+   lblTitulo.Opacity   := 0;
+   lytEndereco.Opacity := 0;
+
+   T := TThread.CreateAnonymousThread(procedure
+   begin
+      //Listar dados do mercado...
+      DmMercado.ListarMercadoId(id_mercado);
+
+      with DmMercado.TabMercado do
+      begin
+         TThread.Synchronize(TThread.CurrentThread, procedure
+         begin
+           lblTitulo.Text   := FieldByName('nome').AsString;
+           lblEndereco.Text := FieldByName('endereco').AsString;
+           lblEntrega.Text  := 'Tx. Entrega: ' + FormatFloat('R$#,##0.00', FieldByName('vl_entrega').AsFloat);
+           lblPedMin.Text   := 'Compra Mín: ' + FormatFloat('R$#,##0.00', FieldByName('vl_compra_min').AsFloat);
+         end);
+      end;
+
+      //Listar as categorias...
+      ListarCategorias;
+   end);
+
+   T.OnTerminate := ThreadDadosTerminate;
+   T.Start;
+end;
+
 
 procedure TFrmMercado.FormShow(Sender: TObject);
 begin
-   ListarCategorias;
+   CarregarDados; // Dados Mercado, categorias e produtos
 end;
 
 procedure TFrmMercado.lbCategoriaItemClick(const Sender: TCustomListBox;
   const Item: TListBoxItem);
 begin
    SelecionarCategoria(Item);
+   ListarProdutos(lbCategoria.Tag);
 end;
 
 procedure TFrmMercado.lbProdutosItemClick(const Sender: TCustomListBox;
@@ -188,13 +291,36 @@ begin
    FrmProduto.Show;
 end;
 
-procedure TFrmMercado.ListarProdutos;
+procedure TFrmMercado.ListarProdutos(id_categoria: integer);
+var
+   T : TThread;
 begin
-   AddProduto(0,'Café Pilão Torrado e Moído','800g', 15);
-   AddProduto(0,'Café Pilão Torrado e Moído','800g', 15);
-   AddProduto(0,'Café Pilão Torrado e Moído','800g', 15);
-   AddProduto(0,'Café Pilão Torrado e Moído','800g', 15);
-   AddProduto(0,'Café Pilão Torrado e Moído','800g', 15);
+   lbProdutos.Items.Clear;
+   TLoading.Show(FrmMercado, '');
+
+   T := TThread.CreateAnonymousThread(procedure
+   begin
+      DmMercado.ListarProduto(id_mercado, id_categoria);
+
+      with DmMercado.TabProduto do
+      begin
+         while Not Eof do
+         begin
+            TThread.Synchronize(TThread.CurrentThread, procedure
+            begin
+               AddProduto(FieldByName('id_produto').AsInteger,
+                          FieldByName('nome').AsString,
+                          FieldByName('unidade').AsString,
+                          FieldByName('preco').AsFloat);
+            end);
+
+            Next;
+         end;
+      end;
+   end);
+
+   T.OnTerminate := ThreadProdutosTerminate;
+   T.Start;
 end;
 
 end.

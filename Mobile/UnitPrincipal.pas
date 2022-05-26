@@ -192,6 +192,7 @@ begin
    if not Assigned(FrmMercado) then
       Application.CreateForm(TFrmMercado, FrmMercado);
 
+   FrmMercado.id_mercado := AItem.Tag;
    FrmMercado.Show;
 end;
 

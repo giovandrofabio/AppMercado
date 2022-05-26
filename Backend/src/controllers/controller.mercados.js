@@ -58,7 +58,7 @@ controllerMercados.get("/mercados/:id_mercado/categorias", function(request, res
         if (err){
             return response.status(500).send(err);
         }else{
-            return response.status(result.length > 0 ? 200 : 404).json(result);
+            return response.status(200).json(result);
         }
     })    
 });
@@ -86,7 +86,7 @@ controllerMercados.get("/mercados/:id_mercado/produtos", function(request, respo
         if (err){
             return response.status(500).send(err);
         }else{
-            return response.status(result.length > 0 ? 200 : 404).json(result);
+            return response.status(200).json(result);
         }
     })    
 });

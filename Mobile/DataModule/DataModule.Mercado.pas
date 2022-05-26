@@ -19,16 +19,22 @@ uses
   FireDAC.Comp.Client,
 
   RESTRequest4D,
-  DataSet.Serialize.Config;
+  DataSet.Serialize.Config,
+  uConsts;
 
 type
   TDmMercado = class(TDataModule)
     TabMercado: TFDMemTable;
+    TabCategoria: TFDMemTable;
+    TabProduto: TFDMemTable;
     procedure DataModuleCreate(Sender: TObject);
   private
     { Private declarations }
   public
     procedure ListarMercado(busca, ind_entrega, ind_retira: string);
+    procedure ListarMercadoId(id_mercado: integer);
+    procedure ListarCategoria(id_mercado: integer);
+    procedure ListarProduto(id_mercado, id_categoria: integer);
     { Public declarations }
   end;
 
@@ -37,10 +43,6 @@ var
 
 implementation
 
-const
-    USER_NAME = '99coders';
-    PASSWORD  = '123456';
-    BASE_URL  = 'http://localhost:3000';
 
 {%CLASSGROUP 'FMX.Controls.TControl'}
 
@@ -61,6 +63,55 @@ begin
             .AddParam('busca',busca)
             .AddParam('ind_entrega',ind_entrega)
             .AddParam('ind_retira',ind_retira)
+            .Accept('application/json')
+            .BasicAuthentication(USER_NAME, PASSWORD)
+            .Get;
+
+    if (resp.StatusCode <> 200) then
+       raise Exception.Create(resp.Content);
+end;
+
+procedure TDmMercado.ListarMercadoId(id_mercado: integer);
+var
+   resp: IResponse;
+begin
+    resp := TRequest.New.BaseURL(BASE_URL)
+            .Resource('mercados')
+            .ResourceSuffix(id_mercado.ToString)
+            .DataSetAdapter(TabMercado)
+            .Accept('application/json')
+            .BasicAuthentication(USER_NAME, PASSWORD)
+            .Get;
+
+    if (resp.StatusCode <> 200) then
+       raise Exception.Create(resp.Content);
+end;
+
+procedure TDmMercado.ListarCategoria(id_mercado: integer);
+var
+   resp: IResponse;
+begin
+    resp := TRequest.New.BaseURL(BASE_URL)
+            .Resource('mercados')
+            .ResourceSuffix(id_mercado.ToString + '/categorias')
+            .DataSetAdapter(TabCategoria)
+            .Accept('application/json')
+            .BasicAuthentication(USER_NAME, PASSWORD)
+            .Get;
+
+    if (resp.StatusCode <> 200) then
+       raise Exception.Create(resp.Content);
+end;
+
+procedure TDmMercado.ListarProduto(id_mercado, id_categoria: integer);
+var
+   resp: IResponse;
+begin
+    resp := TRequest.New.BaseURL(BASE_URL)
+            .Resource('mercados')
+            .ResourceSuffix(id_mercado.ToString + '/produtos')
+            .AddParam('id_categoria',id_categoria.ToString)
+            .DataSetAdapter(TabProduto)
             .Accept('application/json')
             .BasicAuthentication(USER_NAME, PASSWORD)
             .Get;

@@ -17,7 +17,8 @@ uses
   FireDAC.Comp.Client,
   DataSet.Serialize.Config,
   RESTRequest4D,
-  System.JSON;
+  System.JSON,
+  uConsts;
 
 type
   TDmUsuario = class(TDataModule)
@@ -41,10 +42,6 @@ implementation
 
 {$R *.dfm}
 
-const
-    USER_NAME = '99coders';
-    PASSWORD  = '123456';
-    BASE_URL  = 'http://localhost:3000';
 
 procedure TDmUsuario.DataModuleCreate(Sender: TObject);
 begin
