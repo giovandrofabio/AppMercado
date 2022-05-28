@@ -29,4 +29,9 @@ object DmUsuario: TDmUsuario
     Left = 256
     Top = 208
   end
+  object QryUsuario: TFDQuery
+    Connection = conn
+    Left = 120
+    Top = 152
+  end
 end

@@ -339,6 +339,7 @@ begin
    if NOT Assigned(FrmProduto) then
       Application.CreateForm(TFrmProduto, FrmProduto);
 
+   FrmProduto.id_mercado := FrmMercado.id_mercado;
    FrmProduto.Id_produto := Item.Tag;
    FrmProduto.Show;
 end;

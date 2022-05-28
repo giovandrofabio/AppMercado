@@ -74,6 +74,7 @@ type
     procedure lblLoginClick(Sender: TObject);
     procedure btnProximoClick(Sender: TObject);
     procedure btnCriarContaClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
   private
     procedure ThreadLoginTerminate(Sender: TObject);
     { Private declarations }
@@ -94,6 +95,26 @@ uses
 procedure TFrmLogin.btnProximoClick(Sender: TObject);
 begin
    TabControl.GotoVisibleTab(2);
+end;
+
+procedure TFrmLogin.FormShow(Sender: TObject);
+begin
+   try
+      DmUsuario.ListarUsuarioLocal;
+
+      if DmUsuario.QryUsuario.RecordCount > 0 then
+      begin
+         //Abrir o form Principal...
+         if not Assigned(FrmPrincipal) then
+            Application.CreateForm(TFrmPrincipal, FrmPrincipal);
+
+         Application.MainForm := FrmPrincipal;
+         FrmPrincipal.Show;
+         FrmLogin.Close;
+      end;
+   except on ex:Exception do
+      ShowMessage(ex.Message);
+   end;
 end;
 
 procedure TFrmLogin.lblCadContaClick(Sender: TObject);
@@ -141,10 +162,20 @@ begin
                            edtUfCad.Text, edtCepCad.Text);
 
       // Salvar dados no banco do aparelho..
-      if DmUsuario.TabUsuario.RecordCount > 0 then
+      with DmUsuario.TabUsuario do
       begin
-
-      end;
+         if RecordCount > 0 then
+         begin
+            DmUsuario.SalvarUsuarioLocal(fieldbyname('id_usuario').AsInteger,
+                                         edtEmailCad.Text,
+                                         edtNomeCad.Text,
+                                         edtEnderecoCad.Text,
+                                         edtBairroCad.Text,
+                                         edtCidadeCad.Text,
+                                         edtUfCad.Text,
+                                         edtCepCad.Text);
+         end;
+      end
 
    end);
 
@@ -163,9 +194,19 @@ begin
       DmUsuario.Login(edtEmail.Text, edtSenha.Text);
 
       // Salvar dados no banco do aparelho..
-      if DmUsuario.TabUsuario.RecordCount > 0 then
+      with DmUsuario.TabUsuario do
       begin
-
+         if RecordCount > 0 then
+         begin
+            DmUsuario.SalvarUsuarioLocal(fieldbyname('id_usuario').AsInteger,
+                                         fieldbyname('email').AsString,
+                                         fieldbyname('nome').AsString,
+                                         fieldbyname('endereco').AsString,
+                                         fieldbyname('bairro').AsString,
+                                         fieldbyname('cidade').AsString,
+                                         fieldbyname('uf').AsString,
+                                         fieldbyname('cep').AsString);
+         end;
       end;
 
    end);

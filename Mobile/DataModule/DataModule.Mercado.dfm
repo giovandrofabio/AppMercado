@@ -47,4 +47,9 @@ object DmMercado: TDmMercado
     Left = 104
     Top = 136
   end
+  object QryMercado: TFDQuery
+    Connection = DmUsuario.conn
+    Left = 240
+    Top = 144
+  end
 end

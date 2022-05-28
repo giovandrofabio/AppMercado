@@ -20,7 +20,7 @@ uses
 
   RESTRequest4D,
   DataSet.Serialize.Config,
-  uConsts;
+  uConsts, FireDAC.Stan.Async, FireDAC.DApt;
 
 type
   TDmMercado = class(TDataModule)
@@ -28,6 +28,7 @@ type
     TabCategoria: TFDMemTable;
     TabProduto: TFDMemTable;
     TabProdDetalhe: TFDMemTable;
+    QryMercado: TFDQuery;
     procedure DataModuleCreate(Sender: TObject);
   private
     { Private declarations }
@@ -37,6 +38,7 @@ type
     procedure ListarCategoria(id_mercado: integer);
     procedure ListarProduto(id_mercado, id_categoria: integer; busca: string);
     procedure ListarProdutoId(id_produto: integer);
+    function ExistePedidoLocal(id_mercado: integer): Boolean;
     { Public declarations }
   end;
 
@@ -44,6 +46,9 @@ var
   DmMercado: TDmMercado;
 
 implementation
+
+uses
+  DataModule.Usuario;
 
 
 {%CLASSGROUP 'FMX.Controls.TControl'}
@@ -139,5 +144,18 @@ begin
        raise Exception.Create(resp.Content);
 end;
 
+function TDmMercado.ExistePedidoLocal(id_mercado: integer): Boolean;
+begin
+    with QryMercado do
+    begin
+        Active := false;
+        SQL.Clear;
+        SQL.Add('SELECT * FROM TAB_CARRINHO WHERE ID_MERCADO <> :ID_MERCADO ');
+        ParamByName('ID_MERCADO').Value := id_mercado;
+        Active := true;
+
+        Result := RecordCount > 0;
+    end;
+end;
 
 end.

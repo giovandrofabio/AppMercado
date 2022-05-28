@@ -5,7 +5,7 @@ const controllerUsuarios = Router();
 
 controllerUsuarios.post("/usuarios/login", function(request, response){
     
-    let ssql = "select id_usuario, nome, email, endereco, bairro, uf, cep, "
+    let ssql = "select id_usuario, nome, email, endereco, cidade,bairro, uf, cep, "
     ssql += "date_format(dt_cadastro, '%d/%m/%Y %H:%i:%s') as dt_cadastro "
     ssql += " from usuario where email=? and senha=?"
 

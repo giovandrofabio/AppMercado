@@ -18,6 +18,7 @@ uses
   FMX.Controls.Presentation,
   FMX.StdCtrls,
   FMX.Layouts,
+  FMX.DialogService,
   uLoading,
   uFunctions;
 
@@ -45,8 +46,10 @@ type
     procedure FormShow(Sender: TObject);
     procedure imgVoltarClick(Sender: TObject);
     procedure imgMenosClick(Sender: TObject);
+    procedure btnAdicionaClick(Sender: TObject);
   private
     FId_Produto: Integer;
+    FId_Mercado: Integer;
     procedure CarregarDados;
     procedure ThreadDadosTerminate(Sender: TObject);
     procedure Opacity(op: Integer);
@@ -55,6 +58,7 @@ type
   public
     { Public declarations }
     property Id_produto: Integer read FId_Produto write FId_Produto;
+    property id_mercado: Integer read FId_Mercado write  FId_Mercado;
   end;
 
 var
@@ -118,6 +122,28 @@ begin
    lblUnidade.Opacity   := op;
    lblValor.Opacity     := op;
    lblDescricao.Opacity := op;
+end;
+
+procedure TFrmProduto.btnAdicionaClick(Sender: TObject);
+begin
+   //Consiste se possui pedido de outro mercado em aberto...
+   if DmMercado.ExistePedidoLocal(id_mercado) then
+   begin
+        TDialogService.MessageDialog('Você só pode adicionar itens de um mercado por vez. Deseja esvaziar a sacola e adicionar esse item?',
+                     TMsgDlgType.mtConfirmation,
+                     [TMsgDlgBtn.mbYes, TMsgDlgBtn.mbNo],
+                     TMsgDlgBtn.mbNo,
+                     0,
+         procedure(const AResult: TModalResult)
+         begin
+            if AResult = mrYes then
+            begin
+                //DmMercado.LimparCarrinho;
+                //DmMercado.AdicionarItemCarrinho;
+            end;
+         end);
+   end;
+   //else
 end;
 
 procedure TFrmProduto.CarregarDados;

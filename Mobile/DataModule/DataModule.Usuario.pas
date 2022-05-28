@@ -37,6 +37,7 @@ type
     conn: TFDConnection;
     QryGeral: TFDQuery;
     FDPhysSQLiteDriverLink1: TFDPhysSQLiteDriverLink;
+    QryUsuario: TFDQuery;
     procedure DataModuleCreate(Sender: TObject);
     procedure connBeforeConnect(Sender: TObject);
     procedure connAfterConnect(Sender: TObject);
@@ -46,6 +47,8 @@ type
     procedure Login(email, senha: string);
     procedure CriarConta(nome, email, senha, endereco, bairro, cidade, uf,
       cep: string);
+    procedure SalvarUsuarioLocal(id_usuario: Integer; email, nome, endereco, bairro, cidade, uf, cep : string);
+    procedure ListarUsuarioLocal;
     { Public declarations }
   end;
 
@@ -95,7 +98,8 @@ end;
 procedure TDmUsuario.connAfterConnect(Sender: TObject);
 begin
     conn.ExecSQL('CREATE TABLE IF NOT EXISTS ' +
-                 'TAB_USUARIO(EMAIL VARCHAR(100), ' +
+                 'TAB_USUARIO(ID_USUARIO INTEGER NOT NULL PRIMARY KEY, ' +
+                 'EMAIL VARCHAR(100), ' +
                  'NOME VARCHAR(100), ' +
                  'ENDERECO VARCHAR(100), ' +
                  'BAIRRO VARCHAR(100), ' +
@@ -104,7 +108,7 @@ begin
                  'CEP VARCHAR(100))');
 
     conn.ExecSQL('CREATE TABLE IF NOT EXISTS ' +
-                 'TAB_CARRINHO(ID_MERCADO INTEGER, ' +
+                 'TAB_CARRINHO(ID_MERCADO INTEGER NOT NULL PRIMARY KEY, ' +
                  'NOME_MERCADO VARCHAR(100), ' +
                  'ENDERECO_MERCADO VARCHAR(100), ' +
                  'TAXA_ENTREGA DECIMAL(9,2))');
@@ -163,5 +167,41 @@ begin
       json.DisposeOf;
    end;
 end;
+
+procedure TDmUsuario.SalvarUsuarioLocal(id_usuario: Integer; email, nome, endereco, bairro, cidade, uf, cep : string);
+begin
+    with QryUsuario do
+    begin
+        Active := false;
+        SQL.Clear;
+        SQL.Add('INSERT OR REPLACE INTO TAB_USUARIO(ID_USUARIO, EMAIL, NOME,');
+        SQL.Add('ENDERECO, BAIRRO, CIDADE, UF, CEP)');
+        SQL.Add('VALUES(:ID_USUARIO, :EMAIL, :NOME,');
+        SQL.Add(':ENDERECO, :BAIRRO, :CIDADE, :UF, :CEP)');
+
+        ParamByName('ID_USUARIO').Value := id_usuario;
+        ParamByName('EMAIL').Value      := email;
+        ParamByName('NOME').Value       := nome;
+        ParamByName('ENDERECO').Value   := endereco;
+        ParamByName('BAIRRO').Value     := bairro;
+        ParamByName('CIDADE').Value     := cidade;
+        ParamByName('UF').Value         := uf;
+        ParamByName('CEP').Value        := cep;
+
+        ExecSQL;
+    end;
+end;
+
+procedure TDmUsuario.ListarUsuarioLocal;
+begin
+    with QryUsuario do
+    begin
+        Active := false;
+        SQL.Clear;
+        SQL.Add('SELECT * FROM TAB_USUARIO');
+        Active := true;
+    end;
+end;
+
 
 end.
