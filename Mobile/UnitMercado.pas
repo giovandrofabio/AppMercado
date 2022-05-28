@@ -23,7 +23,8 @@ uses
   FMX.Layouts,
   FMX.ListBox,
 
-  uLoading;
+  uLoading,
+  uFunctions;
 
 type
   TFrmMercado = class(TForm)
@@ -88,31 +89,6 @@ uses
    DataModule.Mercado;
 
 {$R *.fmx}
-
-procedure LoadImageFromURL(img: TBitmap; url: string);
-var
-  http: TNetHTTPClient;
-  vStream : TMemoryStream;
-begin
-   http    := TNetHTTPClient.Create(nil);
-   vStream := TMemoryStream.Create;
-   try
-      try
-         if (Pos('https', LowerCase(url)) >0) then
-            HTTP.SecureProtocols := [THttpSecureProtocol.TLS1,
-                                     THttpSecureProtocol.TLS11,
-                                     THttpSecureProtocol.TLS12];
-         http.Get(url, vStream);
-         vStream.position := 0;
-
-         img.LoadFromStream(vStream)
-      except
-      end;
-   finally
-      vStream.DisposeOf;
-      http.DisposeOf;
-   end;
-end;
 
 procedure TFrmMercado.DownloadFoto(lb: TListBox);
 var

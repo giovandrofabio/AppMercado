@@ -5,6 +5,8 @@ interface
 uses
   System.SysUtils,
   System.Classes,
+  System.IOUtils,
+
   Data.DB,
   FireDAC.Stan.Intf,
   FireDAC.Stan.Option,
@@ -15,15 +17,29 @@ uses
   FireDAC.DApt.Intf,
   FireDAC.Comp.DataSet,
   FireDAC.Comp.Client,
+  FireDAC.UI.Intf,
+  FireDAC.Stan.Def,
+  FireDAC.Stan.Pool,
+  FireDAC.Stan.Async,
+  FireDAC.Phys,
+  FireDAC.FMXUI.Wait,
+
   DataSet.Serialize.Config,
   RESTRequest4D,
   System.JSON,
-  uConsts;
+  uConsts, FireDAC.DApt, FireDAC.Stan.ExprFuncs, FireDAC.Phys.SQLiteDef,
+  FireDAC.Phys.SQLite;
+
 
 type
   TDmUsuario = class(TDataModule)
     TabUsuario: TFDMemTable;
+    conn: TFDConnection;
+    QryGeral: TFDQuery;
+    FDPhysSQLiteDriverLink1: TFDPhysSQLiteDriverLink;
     procedure DataModuleCreate(Sender: TObject);
+    procedure connBeforeConnect(Sender: TObject);
+    procedure connAfterConnect(Sender: TObject);
   private
     { Private declarations }
   public
@@ -46,6 +62,7 @@ implementation
 procedure TDmUsuario.DataModuleCreate(Sender: TObject);
 begin
    TDataSetSerializeConfig.GetInstance.CaseNameDefinition := cndLower;
+   conn.Connected := true;
 end;
 
 procedure TDmUsuario.Login(email, senha: string);
@@ -73,6 +90,44 @@ begin
    finally
       json.DisposeOf;
    end;
+end;
+
+procedure TDmUsuario.connAfterConnect(Sender: TObject);
+begin
+    conn.ExecSQL('CREATE TABLE IF NOT EXISTS ' +
+                 'TAB_USUARIO(EMAIL VARCHAR(100), ' +
+                 'NOME VARCHAR(100), ' +
+                 'ENDERECO VARCHAR(100), ' +
+                 'BAIRRO VARCHAR(100), ' +
+                 'CIDADE VARCHAR(100), ' +
+                 'UF VARCHAR(100), ' +
+                 'CEP VARCHAR(100))');
+
+    conn.ExecSQL('CREATE TABLE IF NOT EXISTS ' +
+                 'TAB_CARRINHO(ID_MERCADO INTEGER, ' +
+                 'NOME_MERCADO VARCHAR(100), ' +
+                 'ENDERECO_MERCADO VARCHAR(100), ' +
+                 'TAXA_ENTREGA DECIMAL(9,2))');
+
+    conn.ExecSQL('CREATE TABLE IF NOT EXISTS ' +
+                 'TAB_CARRINHO_ITEM(ID_PRODUTO INTEGER, ' +
+                 'URL_FOTO VARCHAR(1000), ' +
+                 'NOME VARCHAR(100), ' +
+                 'UNIDADE VARCHAR(100), ' +
+                 'QTD DECIMAL(9,2),' +
+                 'VALOR_UNITARIO DECIMAL(9,2),' +
+                 'VALOR_TOTAL DECIMAL(9,2))');
+end;
+
+procedure TDmUsuario.connBeforeConnect(Sender: TObject);
+begin
+   conn.DriverName := 'SQLite';
+
+   {$IFDEF MSWINDOWS}
+   conn.Params.Values['Database'] := System.SysUtils.GetCurrentDir + '\banco.db';
+   {$ELSE}
+   conn.Params.Values['Database'] := TPath.Combine(TPath.GetDocumentsPath, 'banco.db');
+   {$ENDIF}
 end;
 
 procedure TDmUsuario.CriarConta(nome, email, senha, endereco, bairro,
