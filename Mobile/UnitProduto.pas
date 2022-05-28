@@ -50,6 +50,9 @@ type
   private
     FId_Produto: Integer;
     FId_Mercado: Integer;
+    FEndereco: string;
+    FNome_mercado: string;
+    FTaxa_entrega: double;
     procedure CarregarDados;
     procedure ThreadDadosTerminate(Sender: TObject);
     procedure Opacity(op: Integer);
@@ -58,7 +61,10 @@ type
   public
     { Public declarations }
     property Id_produto: Integer read FId_Produto write FId_Produto;
-    property id_mercado: Integer read FId_Mercado write  FId_Mercado;
+    property Id_mercado: Integer read FId_Mercado write  FId_Mercado;
+    property Nome_mercado: string read FNome_mercado write  FNome_mercado;
+    property Endereco: string read FEndereco write  FEndereco;
+    property Taxa_entrega: double read FTaxa_entrega write  FTaxa_entrega;
   end;
 
 var
@@ -138,12 +144,21 @@ begin
          begin
             if AResult = mrYes then
             begin
-                //DmMercado.LimparCarrinho;
-                //DmMercado.AdicionarItemCarrinho;
+                DmMercado.LimparCarrinhoLocal;
+                DmMercado.AdicionarCarrinhoLocal(id_mercado, Nome_mercado, Endereco, Taxa_entrega);
+                DmMercado.AdicionarItemCarrinhoLocal(id_produto, imgFoto.TagString, lblNome.Text, lblUnidade.Text,
+                                                     lblQuantidade.Tag, lblValor.TagFloat);
             end;
          end);
+   end
+   else
+   begin
+      DmMercado.AdicionarCarrinhoLocal(id_mercado, Nome_mercado, Endereco, Taxa_entrega);
+      DmMercado.AdicionarItemCarrinhoLocal(id_produto, imgFoto.TagString, lblNome.Text, lblUnidade.Text,
+                                           lblQuantidade.Tag, lblValor.TagFloat);
    end;
-   //else
+
+   Close;
 end;
 
 procedure TFrmProduto.CarregarDados;
@@ -167,11 +182,13 @@ begin
             lblNome.Text      := fieldbyname('nome').asstring;
             lblUnidade.Text   := fieldbyname('unidade').asstring;
             lblValor.Text     := FormatFloat('R$#,##0.00', fieldbyname('preco').asfloat);
+            lblValor.TagFloat := fieldbyname('preco').asfloat;
             lblDescricao.Text := fieldbyname('descricao').asstring;
          end);
 
          // Carregar foto do produto...
          foto := TBitmap.Create;
+         imgFoto.TagString := fieldbyname('url_foto').asstring;
          LoadImageFromURL(foto, fieldbyname('url_foto').asstring);
          imgFoto.Bitmap := foto;
       end;

@@ -10,6 +10,7 @@ uses
   System.Net.HttpClient;
 
 procedure LoadImageFromURL(img: TBitmap; url: string);
+function Round2(aValue:double):double;
 
 implementation
 
@@ -39,6 +40,11 @@ begin
         vStream.DisposeOf;
         http.DisposeOf;
     end;
+end;
+
+function Round2(aValue:double):double;
+begin
+  Round2:=Round(aValue*100)/100;
 end;
 
 end.

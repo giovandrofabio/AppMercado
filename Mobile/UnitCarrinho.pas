@@ -3,9 +3,23 @@ unit UnitCarrinho;
 interface
 
 uses
-  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
-  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.Objects,
-  FMX.Controls.Presentation, FMX.StdCtrls, FMX.Layouts, FMX.ListBox;
+  System.SysUtils,
+  System.Types,
+  System.UITypes,
+  System.Classes,
+  System.Variants,
+
+  FMX.Types,
+  FMX.Controls,
+  FMX.Forms,
+  FMX.Graphics,
+  FMX.Dialogs,
+  FMX.Objects,
+  FMX.Controls.Presentation,
+  FMX.StdCtrls,
+  FMX.Layouts,
+  FMX.ListBox,
+  uFunctions;
 
 type
   TFrmCarrinho = class(TForm)
@@ -13,27 +27,29 @@ type
     lblTitulo: TLabel;
     imgVoltar: TImage;
     lytEndereco: TLayout;
+    lblNome: TLabel;
     lblEndereco: TLabel;
-    Label1: TLabel;
     btnBusca: TButton;
     Rectangle1: TRectangle;
     Layout1: TLayout;
     Label2: TLabel;
-    Label3: TLabel;
+    lblSubtotal: TLabel;
     Layout2: TLayout;
     Label4: TLabel;
-    Label5: TLabel;
+    lblTotal: TLabel;
     Layout3: TLayout;
     Label6: TLabel;
-    Label7: TLabel;
+    lblTaxa: TLabel;
     Label8: TLabel;
-    Label9: TLabel;
+    lblEndEntrega: TLabel;
     lbProdutos: TListBox;
     procedure FormShow(Sender: TObject);
   private
-    procedure AddProduto(id_produto: Integer; descricao: string; qtde,
-      valor_unit: Double; foto: TStream);
+    procedure AddProduto(id_produto: Integer;
+                                  descricao, url_foto: string;
+                                  qtde, valor_unit: Double);
     procedure CarregarCarrinho;
+    procedure DownloadFoto(lb: TListBox);
     { Private declarations }
   public
     { Public declarations }
@@ -45,14 +61,43 @@ var
 implementation
 
 uses
-   UnitPrincipal, Frame.ProdutoLista;
+   UnitPrincipal,
+   Frame.ProdutoLista,
+   DataModule.Mercado,
+   DataModule.Usuario;
 
 {$R *.fmx}
 
+procedure TFrmCarrinho.DownloadFoto(lb: TListBox);
+var
+   t    : TThread;
+   foto : TBitmap;
+   frame: TFrameProdutoLista;
+begin
+   //Carregar imagens..
+   t := TThread.CreateAnonymousThread(procedure
+   var
+      i : Integer;
+   begin
+      for i := 0 to lb.Items.Count - 1 do
+      begin
+         frame := TFrameProdutoLista(lb.ItemByIndex(i).Components[0]);
+
+         if frame.imgFoto.TagString  <> '' then
+         begin
+            foto := TBitmap.Create;
+            LoadImageFromURL(foto,frame.imgFoto.TagString);
+            frame.imgFoto.TagString := '';
+            frame.imgFoto.bitmap    := foto;
+         end;
+      end;
+   end);
+   t.start;
+end;
+
 procedure TFrmCarrinho.AddProduto(id_produto: Integer;
-                                  descricao: string;
-                                  qtde, valor_unit: Double;
-                                  foto: TStream);
+                                  descricao, url_foto: string;
+                                  qtde, valor_unit: Double);
 var
    item: TListBoxItem;
    frame: TFrameProdutoLista;
@@ -65,6 +110,7 @@ begin
 
    //Frame
    frame := TFrameProdutoLista.Create(item);
+   frame.imgFoto.TagString := url_foto;
    frame.lblDescricao.Text := descricao;
    frame.lblQtd.Text       := qtde.ToString + ' x ' + FormatFloat('#,##0.00', valor_unit);
    frame.lblValor.Text     := FormatFloat('R$ #,##0.00', qtde * valor_unit);
@@ -75,11 +121,53 @@ begin
 end;
 
 procedure TFrmCarrinho.CarregarCarrinho;
+var
+  subtotal: Double;
 begin
-   AddProduto(0, 'Café Pilão', 2, 8, nil);
-   AddProduto(1, 'Café Pilão', 1, 9, nil);
-   AddProduto(2, 'Café Pilão', 1, 15.50, nil);
-   AddProduto(3, 'Café Pilão', 4, 3, nil);
+   try
+      DmMercado.ListarCarrinhoLocal;
+      DmMercado.ListarItemCarrinhoLocal;
+      DmUsuario.ListarUsuarioLocal;
+
+      //Dados Mercado...
+      lblNome.Text     := DmMercado.QryCarrinho.FieldByName('NOME_MERCADO').AsString;
+      lblEndereco.Text := DmMercado.QryCarrinho.FieldByName('ENDERECO_MERCADO').AsString;
+      lblTaxa.Text     := FormatFloat('R$ #,##0.00', DmMercado.QryCarrinho.FieldByName('TAXA_ENTREGA').AsFloat);
+      lblTaxa.TagFloat := DmMercado.QryCarrinho.FieldByName('TAXA_ENTREGA').AsFloat;
+
+      //Dados Usuario
+      lblEndEntrega.Text     := DmUsuario.QryUsuario.FieldByName('ENDERECO').AsString + ' - ' +
+                                DmUsuario.QryUsuario.FieldByName('BAIRRO').AsString + ' - ' +
+                                DmUsuario.QryUsuario.FieldByName('CIDADE').AsString + ' - ' +
+                                DmUsuario.QryUsuario.FieldByName('UF').AsString;
+
+      //Itens do carrinho
+      subtotal := 0;
+      lbProdutos.Items.Clear;
+      with DmMercado.QryCarrinhoItem do
+      begin
+         while not EOF do
+         begin
+            AddProduto(FieldByName('id_produto').AsInteger,
+                       FieldByName('nome').AsString,
+                       FieldByName('url_foto').AsString,
+                       FieldByName('qtd').AsFloat,
+                       FieldByName('valor_unitario').AsFloat);
+
+            subtotal  := subtotal + FieldByName('valor_total').AsFloat;
+            Next;
+         end;
+      end;
+
+      lblSubtotal.Text := FormatFloat('R$ #,##0.00', subtotal);
+      lblTotal.Text    := FormatFloat('R$ #,##0.00', subtotal + lblTaxa.TagFloat);
+
+      //Carrega as fotos...
+      DownloadFoto(lbProdutos);
+
+   except on Ex: Exception do
+      ShowMessage('Erro ao carregar carrinho: ' + Ex.Message);
+   end;
 end;
 
 procedure TFrmCarrinho.FormShow(Sender: TObject);

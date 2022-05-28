@@ -300,10 +300,11 @@ begin
       begin
          TThread.Synchronize(TThread.CurrentThread, procedure
          begin
-           lblTitulo.Text   := FieldByName('nome').AsString;
-           lblEndereco.Text := FieldByName('endereco').AsString;
-           lblEntrega.Text  := 'Tx. Entrega: ' + FormatFloat('R$#,##0.00', FieldByName('vl_entrega').AsFloat);
-           lblPedMin.Text   := 'Compra Mín: ' + FormatFloat('R$#,##0.00', FieldByName('vl_compra_min').AsFloat);
+           lblTitulo.Text      := FieldByName('nome').AsString;
+           lblEndereco.Text    := FieldByName('endereco').AsString;
+           lblEntrega.Text     := 'Tx. Entrega: ' + FormatFloat('R$#,##0.00', FieldByName('vl_entrega').AsFloat);
+           lblEntrega.TagFloat := FieldByName('vl_entrega').AsFloat;
+           lblPedMin.Text      := 'Compra Mín: ' + FormatFloat('R$#,##0.00', FieldByName('vl_compra_min').AsFloat);
          end);
       end;
 
@@ -339,8 +340,11 @@ begin
    if NOT Assigned(FrmProduto) then
       Application.CreateForm(TFrmProduto, FrmProduto);
 
-   FrmProduto.id_mercado := FrmMercado.id_mercado;
-   FrmProduto.Id_produto := Item.Tag;
+   FrmProduto.Nome_mercado := lblTitulo.Text;
+   FrmProduto.Endereco     := lblEndereco.Text;
+   FrmProduto.Taxa_entrega := lblEntrega.TagFloat;
+   FrmProduto.id_mercado   := FrmMercado.id_mercado;
+   FrmProduto.Id_produto   := Item.Tag;
    FrmProduto.Show;
 end;
 

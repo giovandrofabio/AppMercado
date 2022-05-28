@@ -17,10 +17,14 @@ uses
   FireDAC.DApt.Intf,
   FireDAC.Comp.DataSet,
   FireDAC.Comp.Client,
+  FireDAC.Stan.Async,
+  FireDAC.DApt,
 
   RESTRequest4D,
   DataSet.Serialize.Config,
-  uConsts, FireDAC.Stan.Async, FireDAC.DApt;
+  uConsts,
+  uFunctions,
+  Math;
 
 type
   TDmMercado = class(TDataModule)
@@ -29,6 +33,8 @@ type
     TabProduto: TFDMemTable;
     TabProdDetalhe: TFDMemTable;
     QryMercado: TFDQuery;
+    QryCarrinho: TFDQuery;
+    QryCarrinhoItem: TFDQuery;
     procedure DataModuleCreate(Sender: TObject);
   private
     { Private declarations }
@@ -39,6 +45,13 @@ type
     procedure ListarProduto(id_mercado, id_categoria: integer; busca: string);
     procedure ListarProdutoId(id_produto: integer);
     function ExistePedidoLocal(id_mercado: integer): Boolean;
+    procedure LimparCarrinhoLocal;
+    procedure AdicionarCarrinhoLocal(id_mercado: integer; Nome_mercado,
+      Endereco: string; Taxa_entrega: double);
+    procedure AdicionarItemCarrinhoLocal(Id_produto: integer; url_foto, nome,
+      unidade: string; qtd, valor_unitario: double);
+    procedure ListarCarrinhoLocal;
+    procedure ListarItemCarrinhoLocal;
     { Public declarations }
   end;
 
@@ -155,6 +168,91 @@ begin
         Active := true;
 
         Result := RecordCount > 0;
+    end;
+end;
+
+procedure TDmMercado.LimparCarrinhoLocal;
+begin
+    with QryCarrinho do
+    begin
+        Active := false;
+        SQL.Clear;
+        SQL.Add('SELECT * FROM TAB_CARRINHO');
+        ExecSQL;
+
+        Active := false;
+        SQL.Clear;
+        SQL.Add('SELECT * FROM TAB_CARRINHO_ITEM');
+        ExecSQL;
+    end;
+end;
+
+procedure TDmMercado.AdicionarCarrinhoLocal(id_mercado: integer;
+                                            Nome_mercado, Endereco: string;
+                                            Taxa_entrega: double);
+begin
+    with QryCarrinho do
+    begin
+        Active := false;
+        SQL.Clear;
+        SQL.Add('SELECT * FROM TAB_CARRINHO');
+        Active := true;
+
+        if RecordCount = 0 then
+        begin
+            Active := false;
+            SQL.Clear;
+            SQL.Add('INSERT INTO TAB_CARRINHO(ID_MERCADO, NOME_MERCADO, ENDERECO_MERCADO, TAXA_ENTREGA)');
+            SQL.Add('VALUES(:ID_MERCADO, :NOME_MERCADO, :ENDERECO_MERCADO, :TAXA_ENTREGA)');
+            ParamByName('ID_MERCADO').Value       := id_mercado;
+            ParamByName('NOME_MERCADO').Value     := Nome_mercado;
+            ParamByName('ENDERECO_MERCADO').Value := Endereco;
+            ParamByName('TAXA_ENTREGA').Value     := roundto(Taxa_entrega, -2);
+            ExecSQL;
+        end;
+    end;
+end;
+
+procedure TDmMercado.AdicionarItemCarrinhoLocal(Id_produto: integer;
+                                                url_foto, nome, unidade: string;
+                                                qtd, valor_unitario: double);
+begin
+    with QryCarrinho do
+    begin
+        Active := false;
+        SQL.Clear;
+        SQL.Add('INSERT INTO TAB_CARRINHO_ITEM(ID_PRODUTO, URL_FOTO, NOME, UNIDADE, QTD, VALOR_UNITARIO, VALOR_TOTAL)');
+        SQL.Add('VALUES(:ID_PRODUTO, :URL_FOTO, :NOME, :UNIDADE, :QTD, :VALOR_UNITARIO, :VALOR_TOTAL)');
+        ParamByName('ID_PRODUTO').Value     := Id_produto;
+        ParamByName('URL_FOTO').Value       := url_foto;
+        ParamByName('NOME').Value           := nome;
+        ParamByName('UNIDADE').Value        := unidade;
+        ParamByName('QTD').Value            := qtd;
+        ParamByName('VALOR_UNITARIO').Value := roundto(valor_unitario, -2);
+        ParamByName('VALOR_TOTAL').Value    := roundto(valor_unitario * qtd, -2);
+        ExecSQL;
+    end;
+end;
+
+procedure TDmMercado.ListarCarrinhoLocal;
+begin
+    with QryCarrinho do
+    begin
+        Active := false;
+        SQL.Clear;
+        SQL.Add('SELECT * FROM TAB_CARRINHO');
+        Active := true;
+    end;
+end;
+
+procedure TDmMercado.ListarItemCarrinhoLocal;
+begin
+    with QryCarrinhoItem do
+    begin
+        Active := false;
+        SQL.Clear;
+        SQL.Add('SELECT * FROM TAB_CARRINHO_ITEM');
+        Active := true;
     end;
 end;
 

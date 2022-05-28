@@ -52,4 +52,14 @@ object DmMercado: TDmMercado
     Left = 240
     Top = 144
   end
+  object QryCarrinho: TFDQuery
+    Connection = DmUsuario.conn
+    Left = 328
+    Top = 144
+  end
+  object QryCarrinhoItem: TFDQuery
+    Connection = DmUsuario.conn
+    Left = 360
+    Top = 80
+  end
 end
