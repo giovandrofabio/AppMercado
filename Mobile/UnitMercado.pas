@@ -8,6 +8,8 @@ uses
   System.UITypes,
   System.Classes,
   System.Variants,
+  System.Net.HttpClientComponent,
+  System.Net.HttpClient,
 
   FMX.Types,
   FMX.Controls,
@@ -53,17 +55,21 @@ type
       const Item: TListBoxItem);
     procedure lbProdutosItemClick(const Sender: TCustomListBox;
       const Item: TListBoxItem);
+    procedure btnBuscaClick(Sender: TObject);
+    procedure imgVoltarClick(Sender: TObject);
   private
     FId_Mercado: Integer;
-    procedure AddProduto(id_produto: Integer; descricao, unidade: string;
-      valor: Double);
-    procedure ListarProdutos(id_categoria: integer);
+    procedure AddProduto(id_produto: Integer;
+                                 descricao, unidade, url_foto: string;
+                                 valor: Double);
+    procedure ListarProdutos(id_categoria: integer; busca: string);
     procedure ListarCategorias;
     procedure AddCategorias(id_categoria: Integer; descricao: string);
     procedure SelecionarCategoria(item: TListBoxItem);
     procedure CarregarDados;
     procedure ThreadDadosTerminate(Sender: TObject);
     procedure ThreadProdutosTerminate(Sender: TObject);
+    procedure DownloadFoto(lb: TListBox);
     { Private declarations }
   public
     { Public declarations }
@@ -76,12 +82,67 @@ var
 implementation
 
 uses
-   UnitPrincipal, Frame.Produto.Card, UnitProduto, DataModule.Mercado;
+   UnitPrincipal,
+   Frame.Produto.Card,
+   UnitProduto,
+   DataModule.Mercado;
 
 {$R *.fmx}
 
+procedure LoadImageFromURL(img: TBitmap; url: string);
+var
+  http: TNetHTTPClient;
+  vStream : TMemoryStream;
+begin
+   http    := TNetHTTPClient.Create(nil);
+   vStream := TMemoryStream.Create;
+   try
+      try
+         if (Pos('https', LowerCase(url)) >0) then
+            HTTP.SecureProtocols := [THttpSecureProtocol.TLS1,
+                                     THttpSecureProtocol.TLS11,
+                                     THttpSecureProtocol.TLS12];
+         http.Get(url, vStream);
+         vStream.position := 0;
+
+         img.LoadFromStream(vStream)
+      except
+      end;
+   finally
+      vStream.DisposeOf;
+      http.DisposeOf;
+   end;
+end;
+
+procedure TFrmMercado.DownloadFoto(lb: TListBox);
+var
+   t    : TThread;
+   foto : TBitmap;
+   frame: TFrameProdutoCard;
+begin
+   //Carregar imagens..
+   t := TThread.CreateAnonymousThread(procedure
+   var
+      i : Integer;
+   begin
+      for i := 0 to lb.Items.Count - 1 do
+      begin
+         frame := TFrameProdutoCard(lb.ItemByIndex(i).Components[0]);
+
+         if frame.imgFoto.TagString  <> '' then
+         begin
+            foto := TBitmap.Create;
+            LoadImageFromURL(foto,frame.imgFoto.TagString);
+            frame.imgFoto.TagString := '';
+            frame.imgFoto.bitmap    := foto;
+         end;
+      end;
+   end);
+   t.start;
+end;
+
 procedure TFrmMercado.AddProduto(id_produto: Integer;
-                                 descricao, unidade: string;
+                                 descricao, unidade, url_foto: string;
                                  valor: Double);
 var
    item: TListBoxItem;
@@ -98,10 +159,16 @@ begin
    frame.lblDescricao.Text := descricao;
    frame.lblValor.Text     := FormatFloat('R$ #,##0.00', valor);
    frame.lblUnidade.Text   := unidade;
+   frame.imgFoto.TagString := url_foto;
 
    item.AddObject(frame);
 
    lbProdutos.AddObject(item);
+end;
+
+procedure TFrmMercado.btnBuscaClick(Sender: TObject);
+begin
+   ListarProdutos(lbCategoria.Tag, edtBusca.Text);
 end;
 
 procedure TFrmMercado.SelecionarCategoria(item: TListBoxItem);
@@ -219,7 +286,7 @@ begin
       end;
    end;
 
-   ListarProdutos(lbCategoria.Tag);
+   ListarProdutos(lbCategoria.Tag, edtBusca.Text);
 end;
 
 procedure TFrmMercado.ThreadProdutosTerminate(Sender: TObject);
@@ -234,6 +301,8 @@ begin
          Exit;
       end;
    end;
+
+   DownloadFoto(lbProdutos);
 end;
 
 procedure TFrmMercado.CarregarDados;
@@ -276,11 +345,16 @@ begin
    CarregarDados; // Dados Mercado, categorias e produtos
 end;
 
+procedure TFrmMercado.imgVoltarClick(Sender: TObject);
+begin
+   Close;
+end;
+
 procedure TFrmMercado.lbCategoriaItemClick(const Sender: TCustomListBox;
   const Item: TListBoxItem);
 begin
    SelecionarCategoria(Item);
-   ListarProdutos(lbCategoria.Tag);
+   ListarProdutos(lbCategoria.Tag, edtBusca.Text);
 end;
 
 procedure TFrmMercado.lbProdutosItemClick(const Sender: TCustomListBox;
@@ -288,10 +362,12 @@ procedure TFrmMercado.lbProdutosItemClick(const Sender: TCustomListBox;
 begin
    if NOT Assigned(FrmProduto) then
       Application.CreateForm(TFrmProduto, FrmProduto);
+
+   FrmProduto.Id_produto := Item.Tag;
    FrmProduto.Show;
 end;
 
-procedure TFrmMercado.ListarProdutos(id_categoria: integer);
+procedure TFrmMercado.ListarProdutos(id_categoria: integer; busca: string);
 var
    T : TThread;
 begin
@@ -300,7 +376,7 @@ begin
 
    T := TThread.CreateAnonymousThread(procedure
    begin
-      DmMercado.ListarProduto(id_mercado, id_categoria);
+      DmMercado.ListarProduto(id_mercado, id_categoria, busca);
 
       with DmMercado.TabProduto do
       begin
@@ -311,6 +387,7 @@ begin
                AddProduto(FieldByName('id_produto').AsInteger,
                           FieldByName('nome').AsString,
                           FieldByName('unidade').AsString,
+                          FieldByName('url_foto').AsString,
                           FieldByName('preco').AsFloat);
             end);
 

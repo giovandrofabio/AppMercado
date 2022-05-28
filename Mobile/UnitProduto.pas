@@ -29,9 +29,11 @@ type
     lytFundo: TLayout;
     procedure FormResize(Sender: TObject);
   private
+    FId_Produto: Integer;
     { Private declarations }
   public
     { Public declarations }
+    property Id_produto: Integer read FId_Produto write FId_Produto;
   end;
 
 var

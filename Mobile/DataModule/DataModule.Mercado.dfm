@@ -1,8 +1,8 @@
 object DmMercado: TDmMercado
   OldCreateOrder = False
   OnCreate = DataModuleCreate
-  Height = 150
-  Width = 312
+  Height = 228
+  Width = 436
   object TabMercado: TFDMemTable
     FetchOptions.AssignedValues = [evMode]
     FetchOptions.Mode = fmAll
@@ -35,5 +35,16 @@ object DmMercado: TDmMercado
     UpdateOptions.AutoCommitUpdates = True
     Left = 256
     Top = 72
+  end
+  object TabProdDetalhe: TFDMemTable
+    FetchOptions.AssignedValues = [evMode]
+    FetchOptions.Mode = fmAll
+    ResourceOptions.AssignedValues = [rvSilentMode]
+    ResourceOptions.SilentMode = True
+    UpdateOptions.AssignedValues = [uvCheckRequired, uvAutoCommitUpdates]
+    UpdateOptions.CheckRequired = False
+    UpdateOptions.AutoCommitUpdates = True
+    Left = 104
+    Top = 136
   end
 end
