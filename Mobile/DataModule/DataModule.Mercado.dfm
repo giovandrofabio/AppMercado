@@ -54,7 +54,7 @@ object DmMercado: TDmMercado
   end
   object QryCarrinho: TFDQuery
     Connection = DmUsuario.conn
-    Left = 328
+    Left = 304
     Top = 144
   end
   object QryCarrinhoItem: TFDQuery

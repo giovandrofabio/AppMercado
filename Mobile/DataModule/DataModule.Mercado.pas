@@ -5,6 +5,7 @@ interface
 uses
   System.SysUtils,
   System.Classes,
+  System.JSON,
 
   Data.DB,
 
@@ -52,6 +53,9 @@ type
       unidade: string; qtd, valor_unitario: double);
     procedure ListarCarrinhoLocal;
     procedure ListarItemCarrinhoLocal;
+    function JsonPedido(vl_subtotal, vl_entrega, vl_total: double): TJsonObject;
+    procedure InserirPedido(jsonPed: TjsonObject);
+    function JsonPedidoItem: TJsonArray;
     { Public declarations }
   end;
 
@@ -254,6 +258,71 @@ begin
         SQL.Add('SELECT * FROM TAB_CARRINHO_ITEM');
         Active := true;
     end;
+end;
+
+function TDmMercado.JsonPedido(vl_subtotal, vl_entrega, vl_total: double): TJsonObject;
+var
+   jsonPed: TJSONObject;
+begin
+   ListarCarrinhoLocal;
+   DmUsuario.ListarUsuarioLocal;
+
+   jsonPed := TJSONObject.Create;
+   jsonPed.AddPair('id_mercado', TJSONNumber.Create(QryCarrinho.FieldByName('id_mercado').AsInteger));
+   jsonPed.AddPair('id_usuario', TJSONNumber.Create(DmUsuario.QryUsuario.FieldByName('id_usuario').AsInteger));
+   jsonPed.AddPair('vl_subtotal', TJSONNumber.Create(vl_subtotal));
+   jsonPed.AddPair('vl_entrega', TJSONNumber.Create(vl_entrega));
+   jsonPed.AddPair('vl_total', TJSONNumber.Create(vl_total));
+   jsonPed.AddPair('endereco', DmUsuario.QryUsuario.FieldByName('endereco').AsInteger);
+   jsonPed.AddPair('bairro', DmUsuario.QryUsuario.FieldByName('bairro').AsInteger);
+   jsonPed.AddPair('cidade', DmUsuario.QryUsuario.FieldByName('cidade').AsInteger);
+   jsonPed.AddPair('uf', DmUsuario.QryUsuario.FieldByName('uf').AsInteger);
+   jsonPed.AddPair('cep', DmUsuario.QryUsuario.FieldByName('cep').AsInteger);
+
+   Result := jsonPed;
+end;
+
+function TDmMercado.JsonPedidoItem : TJsonArray;
+var
+   arrayItem: TJsonArray;
+   objJSON: TJSONObject;
+begin
+   ListarItemCarrinhoLocal;
+
+   arrayItem := TJsonArray.Create;
+
+   with QryCarrinhoItem do
+   begin
+      while not Eof do
+      begin
+         objJSON := TJSONObject.Create;
+         objJSON.AddPair('id_produto', TJSONNumber.Create(FieldByName('id_produto').AsInteger));
+         objJSON.AddPair('qtd', TJSONNumber.Create(FieldByName('qtd').AsInteger));
+         objJSON.AddPair('vl_unitario', TJSONNumber.Create(FieldByName('valor_unitario').AsFloat));
+         objJSON.AddPair('vl_total', TJSONNumber.Create(FieldByName('valor_total').AsFloat));
+
+         arrayItem.AddElement(objJSON);
+
+         Next;
+      end;
+   end;
+
+   Result := arrayItem;
+end;
+
+procedure TDmMercado.InserirPedido(jsonPed: TjsonObject);
+var
+   resp: IResponse;
+begin
+    resp := TRequest.New.BaseURL(BASE_URL)
+            .Resource('pedidos')
+            .AddBody(jsonPed.ToString)
+            .Accept('application/json')
+            .BasicAuthentication(USER_NAME, PASSWORD)
+            .Post;
+
+    if (resp.StatusCode <> 201) then
+       raise Exception.Create(resp.Content);
 end;
 
 end.

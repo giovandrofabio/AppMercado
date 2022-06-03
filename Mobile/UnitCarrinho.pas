@@ -8,6 +8,7 @@ uses
   System.UITypes,
   System.Classes,
   System.Variants,
+  System.JSON,
 
   FMX.Types,
   FMX.Controls,
@@ -19,7 +20,8 @@ uses
   FMX.StdCtrls,
   FMX.Layouts,
   FMX.ListBox,
-  uFunctions;
+  uFunctions,
+  uLoading;
 
 type
   TFrmCarrinho = class(TForm)
@@ -29,7 +31,7 @@ type
     lytEndereco: TLayout;
     lblNome: TLabel;
     lblEndereco: TLabel;
-    btnBusca: TButton;
+    btnFinalizar: TButton;
     Rectangle1: TRectangle;
     Layout1: TLayout;
     Label2: TLabel;
@@ -44,12 +46,14 @@ type
     lblEndEntrega: TLabel;
     lbProdutos: TListBox;
     procedure FormShow(Sender: TObject);
+    procedure btnFinalizarClick(Sender: TObject);
   private
     procedure AddProduto(id_produto: Integer;
                                   descricao, url_foto: string;
                                   qtde, valor_unit: Double);
     procedure CarregarCarrinho;
     procedure DownloadFoto(lb: TListBox);
+    procedure ThreadPedidoTerminate(Sender: TObject);
     { Private declarations }
   public
     { Public declarations }
@@ -118,6 +122,46 @@ begin
    item.AddObject(frame);
 
    lbProdutos.AddObject(item);
+end;
+
+procedure TFrmCarrinho.ThreadPedidoTerminate(Sender: TObject);
+begin
+   TLoading.Hide;
+
+   if Sender is TThread then
+   begin
+      if Assigned(TThread(Sender).FatalException) then
+      begin
+         ShowMessage(Exception(TThread(Sender).FatalException).Message);
+         Exit;
+      end;
+   end;
+
+   DmMercado.LimparCarrinhoLocal;
+   Close;
+end;
+
+procedure TFrmCarrinho.btnFinalizarClick(Sender: TObject);
+var
+   T : TThread;
+   JsonPedido: TJsonObject;
+   arrayItem : TJSONArray;
+begin
+   TLoading.Show(FrmCarrinho, '');
+   T := TThread.CreateAnonymousThread(procedure
+   begin
+      try
+         jsonPedido := DmMercado.JsonPedido(lblSubtotal.TagFloat, lblTaxa.TagFloat, lblTotal.TagFloat);
+         jsonPedido.AddPair('itens', DmMercado.JsonPedidoItem);
+
+         DmMercado.InserirPedido(jsonPedido);
+      finally
+         jsonPedido.DisposeOf;
+      end;
+   end);
+
+   T.OnTerminate := ThreadPedidoTerminate;
+   T.Start;
 end;
 
 procedure TFrmCarrinho.CarregarCarrinho;
