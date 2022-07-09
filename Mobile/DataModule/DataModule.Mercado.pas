@@ -181,12 +181,12 @@ begin
     begin
         Active := false;
         SQL.Clear;
-        SQL.Add('SELECT * FROM TAB_CARRINHO');
+        SQL.Add('DELETE FROM TAB_CARRINHO');
         ExecSQL;
 
         Active := false;
         SQL.Clear;
-        SQL.Add('SELECT * FROM TAB_CARRINHO_ITEM');
+        SQL.Add('DELETE FROM TAB_CARRINHO_ITEM');
         ExecSQL;
     end;
 end;
@@ -273,11 +273,11 @@ begin
    jsonPed.AddPair('vl_subtotal', TJSONNumber.Create(vl_subtotal));
    jsonPed.AddPair('vl_entrega', TJSONNumber.Create(vl_entrega));
    jsonPed.AddPair('vl_total', TJSONNumber.Create(vl_total));
-   jsonPed.AddPair('endereco', DmUsuario.QryUsuario.FieldByName('endereco').AsInteger);
-   jsonPed.AddPair('bairro', DmUsuario.QryUsuario.FieldByName('bairro').AsInteger);
-   jsonPed.AddPair('cidade', DmUsuario.QryUsuario.FieldByName('cidade').AsInteger);
-   jsonPed.AddPair('uf', DmUsuario.QryUsuario.FieldByName('uf').AsInteger);
-   jsonPed.AddPair('cep', DmUsuario.QryUsuario.FieldByName('cep').AsInteger);
+   jsonPed.AddPair('endereco', DmUsuario.QryUsuario.FieldByName('endereco').AsString);
+   jsonPed.AddPair('bairro', DmUsuario.QryUsuario.FieldByName('bairro').AsString);
+   jsonPed.AddPair('cidade', DmUsuario.QryUsuario.FieldByName('cidade').AsString);
+   jsonPed.AddPair('uf', DmUsuario.QryUsuario.FieldByName('uf').AsString);
+   jsonPed.AddPair('cep', DmUsuario.QryUsuario.FieldByName('cep').AsString);
 
    Result := jsonPed;
 end;
