@@ -3,9 +3,23 @@ unit UnitPedidoDetalhe;
 interface
 
 uses
-  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
-  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.Layouts,
-  FMX.ListBox, FMX.Objects, FMX.Controls.Presentation, FMX.StdCtrls;
+  System.SysUtils,
+  System.Types,
+  System.UITypes,
+  System.Classes,
+  System.Variants,
+  System.JSON,
+  FMX.Types,
+  FMX.Controls,
+  FMX.Forms,
+  FMX.Graphics,
+  FMX.Dialogs,
+  FMX.Layouts,
+  FMX.ListBox,
+  FMX.Objects,
+  FMX.Controls.Presentation,
+  FMX.StdCtrls,
+  uLoading;
 
 type
   TFrmPedidoDetalhe = class(TForm)
@@ -13,8 +27,8 @@ type
     lblTitulo: TLabel;
     imgVoltar: TImage;
     lytEndereco: TLayout;
-    lblEndereco: TLabel;
-    Label1: TLabel;
+    lblMercado: TLabel;
+    lblMercadoEnd: TLabel;
     Rectangle1: TRectangle;
     Layout1: TLayout;
     Label2: TLabel;
@@ -30,11 +44,14 @@ type
     lbProdutos: TListBox;
     procedure FormShow(Sender: TObject);
   private
+    Fid_pedido: Integer;
     procedure AddProduto(id_produto: Integer; descricao: string; qtde,
       valor_unit: Double; foto: TStream);
     procedure CarregarPedido;
+    procedure ThreadDadosTerminate(Sender: TObject);
     { Private declarations }
   public
+    property id_pedido: Integer read Fid_pedido write Fid_pedido;
     { Public declarations }
   end;
 
@@ -44,7 +61,7 @@ var
 implementation
 
 uses
-   Frame.ProdutoLista;
+   Frame.ProdutoLista, DataModule.Usuario;
 
 {$R *.fmx}
 
@@ -73,12 +90,41 @@ begin
    lbProdutos.AddObject(item);
 end;
 
-procedure TFrmPedidoDetalhe.CarregarPedido;
+procedure TFrmPedidoDetalhe.ThreadDadosTerminate(Sender: TObject);
 begin
-   AddProduto(0, 'Café Pilão', 2, 8, nil);
-   AddProduto(1, 'Café Pilão', 1, 9, nil);
-   AddProduto(2, 'Café Pilão', 1, 15.50, nil);
-   AddProduto(3, 'Café Pilão', 4, 3, nil);
+   TLoading.Hide;
+
+   if Sender is TThread then
+   begin
+      if Assigned(TThread(Sender).FatalException) then
+      begin
+         ShowMessage(Exception(TThread(Sender).FatalException).Message);
+         Exit;
+      end;
+   end;
+end;
+
+procedure TFrmPedidoDetalhe.CarregarPedido;
+var
+   T       : TThread;
+   jsonObj : TJsonObject;
+begin
+   TLoading.Show(FrmPedidoDetalhe, '');
+
+   T := TThread.CreateAnonymousThread(procedure
+   begin
+      jsonObj := DmUsuario.JsonPedido(id_pedido);
+
+      TThread.Synchronize(TThread.CurrentThread, procedure
+      begin
+         lblTitulo.Text     := ' Pedido #' + jsonObj.GetValue<String>('id_pedido','');
+         lblMercado.Text    := jsonObj.GetValue<String>('nome_mercado','');
+         lblMercadoEnd.Text := jsonObj.GetValue<String>('endereco_mercado','');
+      end);
+   end);
+
+   T.OnTerminate := ThreadDadosTerminate;
+   T.Start;
 end;
 
 procedure TFrmPedidoDetalhe.FormShow(Sender: TObject);

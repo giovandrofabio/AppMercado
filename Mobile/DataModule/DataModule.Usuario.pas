@@ -38,6 +38,7 @@ type
     QryGeral: TFDQuery;
     FDPhysSQLiteDriverLink1: TFDPhysSQLiteDriverLink;
     QryUsuario: TFDQuery;
+    TabPedido: TFDMemTable;
     procedure DataModuleCreate(Sender: TObject);
     procedure connBeforeConnect(Sender: TObject);
     procedure connAfterConnect(Sender: TObject);
@@ -49,6 +50,9 @@ type
       cep: string);
     procedure SalvarUsuarioLocal(id_usuario: Integer; email, nome, endereco, bairro, cidade, uf, cep : string);
     procedure ListarUsuarioLocal;
+    procedure Logout;
+    procedure ListarPedido(id_usuario: Integer);
+    function JsonPedido(id_pedido: Integer): TJsonObject;
     { Public declarations }
   end;
 
@@ -203,5 +207,58 @@ begin
     end;
 end;
 
+procedure TDmUsuario.Logout;
+begin
+    with QryGeral do
+    begin
+        Active := false;
+        SQL.Clear;
+        SQL.Add('DELETE FROM TAB_USUARIO');
+        ExecSQL;
+
+        Active := false;
+        SQL.Clear;
+        SQL.Add('DELETE FROM TAB_CARRINHO_ITEM');
+        ExecSQL;
+
+        Active := false;
+        SQL.Clear;
+        SQL.Add('DELETE FROM TAB_CARRINHO');
+        ExecSQL;
+    end;
+end;
+
+procedure TDmUsuario.ListarPedido(id_usuario: Integer);
+var
+   resp: IResponse;
+begin
+  resp := TRequest.New.BaseURL(BASE_URL)
+          .Resource('pedidos')
+          .AddParam('id_usuario',id_usuario.ToString)
+          .DataSetAdapter(TabPedido)
+          .Accept('application/json')
+          .BasicAuthentication(USER_NAME, PASSWORD)
+          .Get;
+
+  if (resp.StatusCode <> 200) then
+     raise Exception.Create(resp.Content);
+end;
+
+function TDmUsuario.JsonPedido(id_pedido: Integer) : TJsonObject;
+var
+   resp: IResponse;
+begin
+  resp := TRequest.New.BaseURL(BASE_URL)
+          .Resource('pedidos')
+          .ResourceSuffix(id_pedido.ToString)
+          .Accept('application/json')
+          .BasicAuthentication(USER_NAME, PASSWORD)
+          .Get;
+
+  if (resp.StatusCode <> 200) then
+     raise Exception.Create(resp.Content)
+  else
+     Result := TJsonObject.ParseJSONValue(TEncoding.UTF8.GetBytes(resp.Content), 0) as TJsonObject;
+end;
 
 end.

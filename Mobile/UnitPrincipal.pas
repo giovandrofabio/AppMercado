@@ -51,14 +51,15 @@ type
     rectMenu: TRectangle;
     Image2: TImage;
     imgFecharMenu: TImage;
-    Label2: TLabel;
-    Label3: TLabel;
+    lblMenuEmail: TLabel;
+    lblMenuNome: TLabel;
     rectMenuPedido: TRectangle;
     Label4: TLabel;
-    Rectangle2: TRectangle;
+    rectMenuPerfil: TRectangle;
     Label5: TLabel;
-    Rectangle3: TRectangle;
+    rectMenuLogout: TRectangle;
     Label6: TLabel;
+    AnimationMenu: TFloatAnimation;
     procedure FormShow(Sender: TObject);
     procedure lvMercadoItemClick(const Sender: TObject;
       const AItem: TListViewItem);
@@ -68,6 +69,9 @@ type
     procedure imgFecharMenuClick(Sender: TObject);
     procedure rectMenuPedidoClick(Sender: TObject);
     procedure btnBuscarClick(Sender: TObject);
+    procedure rectMenuLogoutClick(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure AnimationMenuFinish(Sender: TObject);
   private
     FInd_Retira: string;
     FInd_Entrega: string;
@@ -93,7 +97,7 @@ uses
    UnitMercado,
    UnitCarrinho,
    UnitPedido,
-   DataModule.Mercado;
+   DataModule.Mercado, DataModule.Usuario, UnitLogin;
 
 {$R *.fmx}
 
@@ -196,13 +200,46 @@ begin
    FrmMercado.Show;
 end;
 
+procedure TFrmPrincipal.AnimationMenuFinish(Sender: TObject);
+begin
+   AnimationMenu.Inverse := not AnimationMenu.Inverse;
+
+   if rectMenu.Tag = 1 then
+   begin
+      rectMenu.Tag     := 0;
+      rectMenu.Visible := False;
+   end
+   else
+      rectMenu.Tag     := 1;
+end;
+
+procedure TFrmPrincipal.OpenMenu(ind: boolean);
+begin
+   if rectMenu.Tag = 0 then
+      rectMenu.Visible := True;
+
+//   AnimationMenu.StartValue := rectMenu.Width + 50;
+//   AnimationMenu.StartValue := 0;
+   AnimationMenu.Start;
+end;
+
 procedure TFrmPrincipal.btnBuscarClick(Sender: TObject);
 begin
    ListarMercados;
 end;
 
+procedure TFrmPrincipal.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+//   Action       := TCloseAction.caFree;
+//   FrmPrincipal := nil;
+end;
+
 procedure TFrmPrincipal.FormShow(Sender: TObject);
 begin
+   rectMenu.Tag           := 0;
+   rectMenu.Margins.Right := rectMenu.Width + 50;
+   rectMenu.Visible       := False;
+
    SelectionarEntrega(lblCasa);
 end;
 
@@ -219,9 +256,16 @@ begin
    OpenMenu(False);
 end;
 
-procedure TFrmPrincipal.OpenMenu(ind: boolean);
+procedure TFrmPrincipal.rectMenuLogoutClick(Sender: TObject);
 begin
-   rectMenu.Visible := ind;
+  DmUsuario.Logout;
+
+  if not Assigned(FrmLogin) then
+     Application.CreateForm(TFrmLogin, FrmLogin);
+
+  Application.MainForm := FrmLogin;
+  FrmLogin.Show;
+  FrmPrincipal.Close;
 end;
 
 procedure TFrmPrincipal.rectMenuPedidoClick(Sender: TObject);

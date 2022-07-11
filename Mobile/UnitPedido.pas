@@ -3,11 +3,27 @@ unit UnitPedido;
 interface
 
 uses
-  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
-  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
-  FMX.ListView.Types, FMX.ListView.Appearances, FMX.ListView.Adapters.Base,
-  FMX.ListView, FMX.Objects, FMX.Controls.Presentation, FMX.StdCtrls,
-  FMX.Layouts;
+  System.SysUtils,
+  System.Types,
+  System.UITypes,
+  System.Classes,
+  System.Variants,
+  FMX.Types,
+  FMX.Controls,
+  FMX.Forms,
+  FMX.Graphics,
+  FMX.Dialogs,
+  FMX.ListView.Types,
+  FMX.ListView.Appearances,
+  FMX.ListView.Adapters.Base,
+  FMX.ListView,
+  FMX.Objects,
+  FMX.Controls.Presentation,
+  FMX.StdCtrls,
+  FMX.Layouts,
+  uLoading,
+  uSession,
+  uFunctions;
 
 type
   TFrmPedido = class(TForm)
@@ -24,6 +40,7 @@ type
     procedure AddPedidoLv(id_pedido, qtd_itens: Integer; nome, endereco,
       dt_pedido: string; vl_pedido: double);
     procedure ListarPedidos;
+    procedure ThreadDadosTerminate(Sender: TObject);
     { Private declarations }
   public
     { Public declarations }
@@ -35,7 +52,7 @@ var
 implementation
 
 uses
-   UnitPrincipal, UnitPedidoDetalhe;
+   UnitPrincipal, UnitPedidoDetalhe, DataModule.Usuario;
 
 {$R *.fmx}
 
@@ -67,17 +84,61 @@ begin
       txt.Text := FormatFloat('R$ #,##0.00', vl_pedido) + ' - ' + qtd_itens.ToString + ' itens';
 
       txt := TListItemText(Objects.FindDrawable('txtData'));
-      txt.Text := dt_pedido;
+      txt.Text := Copy(dt_pedido,1,16);
    end;
 end;
 
 procedure TFrmPedido.ListarPedidos;
+var
+   T : TThread;
 begin
-   AddPedidoLv(69951, 3,'Pão de Açucar', 'Av.Paulista,1500','15/02/2022',142);
-   AddPedidoLv(58741, 2,'Pão de Açucar', 'Av.Paulista,1500','15/02/2022',142);
-   AddPedidoLv(52141, 9,'Pão de Açucar', 'Av.Paulista,1500','15/02/2022',142);
-   AddPedidoLv(68451, 8,'Pão de Açucar', 'Av.Paulista,1500','15/02/2022',142);
+   TLoading.Show(FrmPedido, '');
+   lvPedidos.Items.Clear;
+   lvPedidos.BeginUpdate;
+
+   T := TThread.CreateAnonymousThread(procedure
+   begin
+      DmUsuario.ListarPedido(TSession.ID_USUARIO);
+
+      with DmUsuario.TabPedido do
+      begin
+         while NOT Eof do
+         begin
+            TThread.Synchronize(TThread.CurrentThread, procedure
+            begin
+               AddPedidoLv(FieldByName('id_pedido').AsInteger,
+                           FieldByName('qtd_itens').AsInteger,
+                           FieldByName('nome').AsString,
+                           FieldByName('endereco').AsString,
+                           UTCtoDateBR(FieldByName('dt_pedido').AsString),
+                           FieldByName('vl_total').AsFloat);
+            end);
+
+            Next;
+
+         end;
+      end;
+   end);
+
+   T.OnTerminate := ThreadDadosTerminate;
+   T.Start;
 end;
+
+procedure TFrmPedido.ThreadDadosTerminate(Sender: TObject);
+begin
+   lvPedidos.EndUpdate;
+   TLoading.Hide;
+
+   if Sender is TThread then
+   begin
+      if Assigned(TThread(Sender).FatalException) then
+      begin
+         ShowMessage(Exception(TThread(Sender).FatalException).Message);
+         Exit;
+      end;
+   end;
+end;
+
 
 procedure TFrmPedido.lvPedidosItemClick(const Sender: TObject;
   const AItem: TListViewItem);
@@ -85,6 +146,7 @@ begin
    if not Assigned(FrmPedidoDetalhe) then
       Application.CreateForm(TFrmPedidoDetalhe, FrmPedidoDetalhe);
 
+   FrmPedidoDetalhe.id_pedido :=  AItem.Tag;
    FrmPedidoDetalhe.Show;
 end;
 

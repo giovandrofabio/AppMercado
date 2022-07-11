@@ -21,7 +21,8 @@ uses
   FMX.Controls.Presentation,
   FMX.StdCtrls,
 
-  uLoading;
+  uLoading,
+  uSession;
 
 type
   TFrmLogin = class(TForm)
@@ -75,8 +76,10 @@ type
     procedure btnProximoClick(Sender: TObject);
     procedure btnCriarContaClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
   private
     procedure ThreadLoginTerminate(Sender: TObject);
+    procedure ThreadShowTerminate(Sender: TObject);
     { Private declarations }
   public
     { Public declarations }
@@ -97,24 +100,25 @@ begin
    TabControl.GotoVisibleTab(2);
 end;
 
-procedure TFrmLogin.FormShow(Sender: TObject);
+procedure TFrmLogin.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
-   try
+  Action   := TCloseAction.caFree;
+  FrmLogin := nil;
+end;
+
+procedure TFrmLogin.FormShow(Sender: TObject);
+var
+   T : TThread;
+begin
+   TLoading.Show(FrmLogin, '');
+
+   T := TThread.CreateAnonymousThread(procedure
+   begin
       DmUsuario.ListarUsuarioLocal;
+   end);
 
-      if DmUsuario.QryUsuario.RecordCount > 0 then
-      begin
-         //Abrir o form Principal...
-         if not Assigned(FrmPrincipal) then
-            Application.CreateForm(TFrmPrincipal, FrmPrincipal);
-
-         Application.MainForm := FrmPrincipal;
-         FrmPrincipal.Show;
-         FrmLogin.Close;
-      end;
-   except on ex:Exception do
-      ShowMessage(ex.Message);
-   end;
+   T.OnTerminate := ThreadShowTerminate;
+   T.Start;
 end;
 
 procedure TFrmLogin.lblCadContaClick(Sender: TObject);
@@ -144,9 +148,45 @@ begin
    if not Assigned(FrmPrincipal) then
       Application.CreateForm(TFrmPrincipal, FrmPrincipal);
 
+   try
+      DmUsuario.ListarUsuarioLocal;
+   except
+   end;
+
    Application.MainForm := FrmPrincipal;
+   TSession.ID_USUARIO            := DmUsuario.QryUsuario.FieldByName('id_usuario').AsInteger;
+   FrmPrincipal.lblMenuEmail.Text := DmUsuario.QryUsuario.FieldByName('email').AsString;
+   FrmPrincipal.lblMenuNome.Text  := DmUsuario.QryUsuario.FieldByName('nome').AsString;
    FrmPrincipal.Show;
    FrmLogin.Close;
+end;
+
+procedure TFrmLogin.ThreadShowTerminate(Sender: TObject);
+begin
+   TLoading.Hide;
+
+   if Sender is TThread then
+   begin
+      if Assigned(TThread(Sender).FatalException) then
+      begin
+         ShowMessage(Exception(TThread(Sender).FatalException).Message);
+         Exit;
+      end;
+   end;
+
+   if DmUsuario.QryUsuario.RecordCount > 0 then
+   begin
+      //Abrir o form Principal...
+      if not Assigned(FrmPrincipal) then
+         Application.CreateForm(TFrmPrincipal, FrmPrincipal);
+
+      Application.MainForm := FrmPrincipal;
+      TSession.ID_USUARIO            := DmUsuario.QryUsuario.FieldByName('id_usuario').AsInteger;
+      FrmPrincipal.lblMenuEmail.Text := DmUsuario.QryUsuario.FieldByName('email').AsString;
+      FrmPrincipal.lblMenuNome.Text  := DmUsuario.QryUsuario.FieldByName('nome').AsString;
+      FrmPrincipal.Show;
+      FrmLogin.Close;
+   end;
 end;
 
 procedure TFrmLogin.btnCriarContaClick(Sender: TObject);

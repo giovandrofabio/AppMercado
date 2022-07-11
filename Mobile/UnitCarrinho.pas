@@ -203,9 +203,11 @@ begin
          end;
       end;
 
-      lblSubtotal.Text := FormatFloat('R$ #,##0.00', subtotal);
-      lblTotal.Text    := FormatFloat('R$ #,##0.00', subtotal + lblTaxa.TagFloat);
+      lblSubtotal.Text     := FormatFloat('R$ #,##0.00', subtotal);
+      lblSubtotal.TagFloat := subtotal;
 
+      lblTotal.Text     := FormatFloat('R$ #,##0.00', subtotal + lblTaxa.TagFloat);
+      lblTotal.TagFloat := subtotal + lblTaxa.TagFloat;
       //Carrega as fotos...
       DownloadFoto(lbProdutos);
 
