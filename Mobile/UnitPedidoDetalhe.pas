@@ -19,7 +19,8 @@ uses
   FMX.Objects,
   FMX.Controls.Presentation,
   FMX.StdCtrls,
-  uLoading;
+  uLoading,
+  uFunctions;
 
 type
   TFrmPedidoDetalhe = class(TForm)
@@ -31,24 +32,26 @@ type
     lblMercadoEnd: TLabel;
     Rectangle1: TRectangle;
     Layout1: TLayout;
-    Label2: TLabel;
-    Label3: TLabel;
+    lblSubtotal1: TLabel;
+    lblSubtotal: TLabel;
     Layout2: TLayout;
-    Label4: TLabel;
-    Label5: TLabel;
+    lblTotal1: TLabel;
+    lblTotal: TLabel;
     Layout3: TLayout;
-    Label6: TLabel;
-    Label7: TLabel;
+    lblTaxaEntrega1: TLabel;
+    lblTaxaEntrega: TLabel;
     Label8: TLabel;
-    Label9: TLabel;
+    lblEndereco: TLabel;
     lbProdutos: TListBox;
     procedure FormShow(Sender: TObject);
   private
     Fid_pedido: Integer;
-    procedure AddProduto(id_produto: Integer; descricao: string; qtde,
-      valor_unit: Double; foto: TStream);
+    procedure AddProduto(id_produto: Integer;
+                                  descricao, url_foto: string;
+                                  qtde, valor_unit: Double);
     procedure CarregarPedido;
     procedure ThreadDadosTerminate(Sender: TObject);
+    procedure DownloadFoto(lb: TListBox);
     { Private declarations }
   public
     property id_pedido: Integer read Fid_pedido write Fid_pedido;
@@ -66,9 +69,8 @@ uses
 {$R *.fmx}
 
 procedure TFrmPedidoDetalhe.AddProduto(id_produto: Integer;
-                                  descricao: string;
-                                  qtde, valor_unit: Double;
-                                  foto: TStream);
+                                  descricao, url_foto: string;
+                                  qtde, valor_unit: Double);
 var
    item: TListBoxItem;
    frame: TFrameProdutoLista;
@@ -81,6 +83,7 @@ begin
 
    //Frame
    frame := TFrameProdutoLista.Create(item);
+   frame.imgFoto.TagString := url_foto;
    frame.lblDescricao.Text := descricao;
    frame.lblQtd.Text       := qtde.ToString + ' x ' + FormatFloat('#,##0.00', valor_unit);
    frame.lblValor.Text     := FormatFloat('R$ #,##0.00', qtde * valor_unit);
@@ -102,25 +105,77 @@ begin
          Exit;
       end;
    end;
+
+   DownloadFoto(lbProdutos);
+end;
+
+procedure TFrmPedidoDetalhe.DownloadFoto(lb: TListBox);
+var
+   t    : TThread;
+   foto : TBitmap;
+   frame: TFrameProdutoLista;
+begin
+   //Carregar imagens..
+   t := TThread.CreateAnonymousThread(procedure
+   var
+      i : Integer;
+   begin
+      for i := 0 to lb.Items.Count - 1 do
+      begin
+         frame := TFrameProdutoLista(lb.ItemByIndex(i).Components[0]);
+
+         if frame.imgFoto.TagString  <> '' then
+         begin
+            foto := TBitmap.Create;
+            LoadImageFromURL(foto,frame.imgFoto.TagString);
+            frame.imgFoto.TagString := '';
+            frame.imgFoto.bitmap    := foto;
+         end;
+      end;
+   end);
+   t.start;
 end;
 
 procedure TFrmPedidoDetalhe.CarregarPedido;
 var
-   T       : TThread;
-   jsonObj : TJsonObject;
+   T         : TThread;
+   jsonObj   : TJsonObject;
+   arrayItem : TJSONArray;
 begin
    TLoading.Show(FrmPedidoDetalhe, '');
+   lbProdutos.Items.Clear;
 
    T := TThread.CreateAnonymousThread(procedure
    begin
       jsonObj := DmUsuario.JsonPedido(id_pedido);
 
       TThread.Synchronize(TThread.CurrentThread, procedure
+      var
+        x : Integer;
       begin
-         lblTitulo.Text     := ' Pedido #' + jsonObj.GetValue<String>('id_pedido','');
-         lblMercado.Text    := jsonObj.GetValue<String>('nome_mercado','');
-         lblMercadoEnd.Text := jsonObj.GetValue<String>('endereco_mercado','');
+         lblTitulo.Text      := ' Pedido #' + jsonObj.GetValue<String>('id_pedido','');
+         lblMercado.Text     := jsonObj.GetValue<String>('nome_mercado','');
+         lblMercadoEnd.Text  := jsonObj.GetValue<String>('endereco_mercado','');
+         lblSubtotal.Text    := FormatFloat('R$ #,##0.00',jsonObj.GetValue<double>('vl_subtotal',0));
+         lblTaxaEntrega.Text := FormatFloat('R$ #,##0.00',jsonObj.GetValue<double>('vl_entrega',0));
+         lblTotal.Text       := FormatFloat('R$ #,##0.00',jsonObj.GetValue<double>('vl_total',0));
+         lblEndereco.Text    := jsonObj.GetValue<String>('endereco','');
+
+         // Itens...
+         arrayItem :=  jsonObj.GetValue<TJSONArray>('itens');
+
+         for x := 0 to arrayItem.Size - 1 do
+         begin
+            AddProduto(arrayItem.Get(x).GetValue<Integer>('id_produto',0),
+                       arrayItem.Get(x).GetValue<String>('descricao',''),
+                       arrayItem.Get(x).GetValue<string>('url_foto',''),
+                       arrayItem.Get(x).GetValue<Integer>('qtd',0),
+                       arrayItem.Get(x).GetValue<double>('vl_unitario',0));
+         end;
       end);
+
+      jsonObj.DisposeOf;
+
    end);
 
    T.OnTerminate := ThreadDadosTerminate;

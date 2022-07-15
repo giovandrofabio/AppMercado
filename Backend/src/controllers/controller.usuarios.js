@@ -51,26 +51,26 @@ controllerUsuarios.get("/usuarios/:id_usuario", function(request, response){
     })    
 });
 
-controllerUsuarios.put("/usuarios/:id_usuario", function(request, response){
-    let body = request.body 
-    let ssql = "UPDATE usuarios SET nome=?, email=?, senha=?, endereco=?, bairro=?, cidade=?, uf=?, cep=? "
-    ssql += " WHERE id_usuario = ? "
- 
-    db.query(ssql, [body.nome,
-                    body.email,
-                    body.senha,
-                    body.endereco,
-                    body.bairro,
-                    body.cidade,
-                    body.uf,
-                    body.cep,
-                    request.params.id,], function(err, result){
-        if (err){
+controllerUsuarios.put("/usuarios/:id_usuario", function(request, response){    
+    
+    let ssql = "update usuario set nome=?, email=?, senha=?, endereco=?, bairro=?, ";
+    ssql += "cidade=?, uf=?, cep=? where id_usuario=?";
+
+    db.query(ssql, [request.body.nome, 
+                    request.body.email,
+                    request.body.senha,
+                    request.body.endereco,
+                    request.body.bairro,
+                    request.body.cidade,
+                    request.body.uf,
+                    request.body.cep,
+                    request.params.id_usuario], function(err, result) {
+        if (err) {
             return response.status(500).send(err);
-        }else{
-            return response.status(200).json({id_usuario: request.params.id});
+        } else {
+            return response.status(200).json({id_usuario: request.params.id_usuario});
         }
-    })    
+    });
 });
 
 controllerUsuarios.get("/usuarios", function(request, response){

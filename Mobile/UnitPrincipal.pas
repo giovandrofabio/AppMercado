@@ -72,6 +72,7 @@ type
     procedure rectMenuLogoutClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure AnimationMenuFinish(Sender: TObject);
+    procedure rectMenuPerfilClick(Sender: TObject);
   private
     FInd_Retira: string;
     FInd_Entrega: string;
@@ -97,7 +98,7 @@ uses
    UnitMercado,
    UnitCarrinho,
    UnitPedido,
-   DataModule.Mercado, DataModule.Usuario, UnitLogin;
+   DataModule.Mercado, DataModule.Usuario, UnitLogin, UnitPerfil;
 
 {$R *.fmx}
 
@@ -275,6 +276,15 @@ begin
 
    OpenMenu(false);
    FrmPedido.Show;
+end;
+
+procedure TFrmPrincipal.rectMenuPerfilClick(Sender: TObject);
+begin
+   if not Assigned(FrmPerfil) then
+      Application.CreateForm(TFrmPerfil, FrmPerfil);
+
+   OpenMenu(false);
+   FrmPerfil.Show;
 end;
 
 procedure TFrmPrincipal.imgMenuClick(Sender: TObject);

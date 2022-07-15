@@ -53,6 +53,9 @@ type
     procedure Logout;
     procedure ListarPedido(id_usuario: Integer);
     function JsonPedido(id_pedido: Integer): TJsonObject;
+    procedure ListarUsuarioId(id_usuario: Integer);
+    procedure EditarUsuario(id_usuario: Integer; nome, email, senha, endereco,
+      bairro, cidade, uf, cep: string);
     { Public declarations }
   end;
 
@@ -97,6 +100,56 @@ begin
    finally
       json.DisposeOf;
    end;
+end;
+
+procedure TDmUsuario.EditarUsuario(id_usuario: Integer;
+                                   nome, email, senha, endereco, bairro, cidade, uf, cep : string);
+var
+   resp: IResponse;
+   json: TJSONObject;
+begin
+   json := TJSONObject.Create;
+   try
+      json.AddPair('nome',nome);
+      json.AddPair('email',email);
+      json.AddPair('senha',senha);
+      json.AddPair('endereco',endereco);
+      json.AddPair('bairro',bairro);
+      json.AddPair('cidade',cidade);
+      json.AddPair('uf',uf);
+      json.AddPair('cep',cep);
+
+      resp := TRequest.New.BaseURL(BASE_URL)
+              .Resource('usuarios')
+              .ResourceSuffix(id_usuario.ToString)
+              .AddBody(json.ToJSON)
+              .Accept('application/json')
+              .BasicAuthentication(USER_NAME, PASSWORD)
+              .Put;
+
+      if (resp.StatusCode <> 200) then
+         raise Exception.Create(resp.Content);
+   finally
+      json.DisposeOf;
+   end;
+end;
+
+procedure TDmUsuario.ListarUsuarioId(id_usuario: Integer);
+var
+   resp: IResponse;
+begin
+   TabUsuario.FieldDefs.Clear;
+
+   resp := TRequest.New.BaseURL(BASE_URL)
+           .Resource('usuarios')
+           .ResourceSuffix(id_usuario.ToString)
+           .DataSetAdapter(TabUsuario)
+           .Accept('application/json')
+           .BasicAuthentication(USER_NAME, PASSWORD)
+           .Get;
+
+ if (resp.StatusCode <> 200) then
+      raise Exception.Create(resp.Content);
 end;
 
 procedure TDmUsuario.connAfterConnect(Sender: TObject);
